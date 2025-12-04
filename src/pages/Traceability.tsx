@@ -24,7 +24,7 @@ export default function Traceability() {
 
     setIsSearching(true);
 
-    // Simulate search delay
+    // Simular retraso de búsqueda
     setTimeout(() => {
       const isValid = verifyQRCode(qrCode);
 
@@ -242,10 +242,10 @@ export default function Traceability() {
                         {/* Timeline Dot */}
                         <div
                           className={`relative z-10 w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0 ${stage.status === 'completed'
-                              ? 'bg-green-100'
-                              : stage.status === 'in_progress'
-                                ? 'bg-blue-100'
-                                : 'bg-gray-100'
+                            ? 'bg-green-100'
+                            : stage.status === 'in_progress'
+                              ? 'bg-blue-100'
+                              : 'bg-gray-100'
                             }`}
                         >
                           {stage.status === 'completed' ? (

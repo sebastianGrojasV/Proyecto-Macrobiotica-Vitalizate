@@ -1,8 +1,8 @@
-# Shadcn-UI Template Usage Instructions
+# Instrucciones de Uso de la Plantilla Shadcn-UI
 
-## technology stack
+## Pila Tecnológica
 
-This project is built with:
+Este proyecto está construido con:
 
 - Vite
 - TypeScript
@@ -10,58 +10,59 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
-All shadcn/ui components have been downloaded under `@/components/ui`.
+Todos los componentes de shadcn/ui han sido descargados en `@/components/ui`.
 
-## File Structure
+## Estructura de Archivos
 
-- `index.html` - HTML entry point
-- `vite.config.ts` - Vite configuration file
-- `tailwind.config.js` - Tailwind CSS configuration file
-- `package.json` - NPM dependencies and scripts
-- `src/app.tsx` - Root component of the project
-- `src/main.tsx` - Project entry point
-- `src/index.css` - Existing CSS configuration
-- `src/pages/Index.tsx` - Home page logic
+- `index.html` - Punto de entrada HTML
+- `vite.config.ts` - Archivo de configuración de Vite
+- `tailwind.config.js` - Archivo de configuración de Tailwind CSS
+- `package.json` - Dependencias y scripts de NPM
+- `src/app.tsx` - Componente raíz del proyecto
+- `src/main.tsx` - Punto de entrada del proyecto
+- `src/index.css` - Configuración CSS existente
+- `src/pages/Index.tsx` - Lógica de la página principal
 
-## Components
+## Componentes
 
-- All shadcn/ui components are pre-downloaded and available at `@/components/ui`
+- Todos los componentes de shadcn/ui están pre-descargados y disponibles en `@/components/ui`
 
-## Styling
+## Estilos
 
-- Add global styles to `src/index.css` or create new CSS files as needed
-- Use Tailwind classes for styling components
+- Agrega estilos globales a `src/index.css` o crea nuevos archivos CSS según sea necesario
+- Usa clases de Tailwind para estilizar componentes
 
-## Development
+## Desarrollo
 
-- Import components from `@/components/ui` in your React components
-- Customize the UI by modifying the Tailwind configuration
+- Importa componentes desde `@/components/ui` en tus componentes de React
+- Personaliza la interfaz modificando la configuración de Tailwind
 
-## Note
+## Nota
 
-- The `@/` path alias points to the `src/` directory
-- In your typescript code, don't re-export types that you're already importing
+- El alias de ruta `@/` apunta al directorio `src/`
+- En tu código TypeScript, no re-exportes tipos que ya estás importando
 
-# Commands
+# Comandos
 
-**Install Dependencies**
+**Instalar Dependencias**
 
 ```shell
 pnpm i
 ```
 
-**Add Dependencies**
+**Agregar Dependencias**
 
 ```shell
-pnpm add some_new_dependency
+pnpm add nombre_de_nueva_dependencia
+```
 
-**Start Preview**
+**Iniciar Vista Previa**
 
 ```shell
 pnpm run dev
 ```
 
-**To build**
+**Para Construir**
 
 ```shell
 pnpm run build

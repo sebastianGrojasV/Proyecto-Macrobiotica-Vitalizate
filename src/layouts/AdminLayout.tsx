@@ -73,8 +73,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <p className="text-sm font-medium text-gray-900">Administrador</p>
               <p className="text-xs text-gray-600">admin@vitalizate.cr</p>
             </div>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="icon"
               onClick={handleLogout}
               title="Salir a Vista de Cliente"

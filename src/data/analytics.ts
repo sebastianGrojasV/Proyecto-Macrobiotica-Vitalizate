@@ -44,7 +44,7 @@ export interface AnalyticsSummary {
   ordersGrowth: number;
 }
 
-// Mock data for sales over time
+// Datos simulados para ventas a lo largo del tiempo
 export const mockSalesData: SalesData[] = [
   { month: 'Ene', sales: 45000, revenue: 12500000, orders: 156 },
   { month: 'Feb', sales: 52000, revenue: 14800000, orders: 189 },
@@ -60,7 +60,7 @@ export const mockSalesData: SalesData[] = [
   { month: 'Dic', sales: 95000, revenue: 29000000, orders: 367 },
 ];
 
-// Mock data for top selling products
+// Datos simulados para productos más vendidos
 export const mockTopProducts: ProductSales[] = [
   {
     id: 'prod-001',
@@ -144,7 +144,7 @@ export const mockTopProducts: ProductSales[] = [
   },
 ];
 
-// Mock data for category sales
+// Datos simulados para ventas por categoría
 export const mockCategorySales: CategorySales[] = [
   { category: 'Superalimentos', sales: 2345, revenue: 35175000, percentage: 28 },
   { category: 'Vitaminas', sales: 1987, revenue: 29805000, percentage: 24 },
@@ -154,7 +154,7 @@ export const mockCategorySales: CategorySales[] = [
   { category: 'Otros', sales: 123, revenue: 1845000, percentage: 1 },
 ];
 
-// Mock data for customer metrics
+// Datos simulados para métricas de clientes
 export const mockCustomerMetrics: CustomerMetrics = {
   totalCustomers: 3456,
   newCustomers: 567,
@@ -163,7 +163,7 @@ export const mockCustomerMetrics: CustomerMetrics = {
   customerRetentionRate: 83.6,
 };
 
-// Mock data for traceability metrics
+// Datos simulados para métricas de trazabilidad
 export const mockTraceabilityMetrics: TraceabilityMetrics = {
   totalVerifications: 8934,
   verificationsByProduct: [
@@ -185,7 +185,7 @@ export const mockTraceabilityMetrics: TraceabilityMetrics = {
   ],
 };
 
-// Mock data for analytics summary
+// Datos simulados para resumen de analíticas
 export const mockAnalyticsSummary: AnalyticsSummary = {
   totalRevenue: 226300000,
   totalOrders: 2998,
@@ -195,18 +195,18 @@ export const mockAnalyticsSummary: AnalyticsSummary = {
   ordersGrowth: 15.2,
 };
 
-// Helper function to format currency
+// Función auxiliar para formatear moneda
 export const formatCurrency = (amount: number): string => {
   return `₡${amount.toLocaleString('es-CR')}`;
 };
 
-// Helper function to calculate percentage change
+// Función auxiliar para calcular cambio porcentual
 export const calculatePercentageChange = (current: number, previous: number): number => {
   if (previous === 0) return 0;
   return ((current - previous) / previous) * 100;
 };
 
-// Helper function to get color based on value
+// Función auxiliar para obtener color basado en valor
 export const getGrowthColor = (value: number): string => {
   if (value > 0) return 'text-green-600';
   if (value < 0) return 'text-red-600';

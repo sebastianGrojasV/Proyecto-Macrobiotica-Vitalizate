@@ -168,7 +168,7 @@ export const generateQRCode = (batchNumber: string): string => {
 };
 
 export const verifyQRCode = (qrCode: string): boolean => {
-  // Simple verification: check if QR code follows the expected format
+  // Verificación simple: comprobar si el código QR sigue el formato esperado
   const pattern = /^VTZ-[A-Z0-9]+-[A-Z0-9]+-[A-Z0-9]+$/;
   return pattern.test(qrCode);
 };
