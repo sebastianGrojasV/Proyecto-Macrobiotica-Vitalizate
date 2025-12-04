@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 20%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 20%;
+    --primary: 142 54% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 88% 55%;
+    --secondary-foreground: 0 0% 20%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 20%;
+    --accent: 136 37% 75%;
+    --accent-foreground: 0 0% 20%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 142 54% 40%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 0 0% 7%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 142 54% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 88% 55%;
+    --secondary-foreground: 0 0% 20%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 136 37% 75%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 142 54% 40%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', 'Lato', system-ui, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .shadow-natural {
+    box-shadow: 0 2px 8px rgba(47, 154, 72, 0.08), 0 1px 3px rgba(47, 154, 72, 0.06);
+  }
+  
+  .shadow-natural-lg {
+    box-shadow: 0 4px 16px rgba(47, 154, 72, 0.12), 0 2px 6px rgba(47, 154, 72, 0.08);
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, #2F9A48 0%, #1F6A32 100%);
+  }
+
+  .gradient-natural {
+    background: linear-gradient(135deg, #A7D7A9 0%, #F2F2EA 100%);
+  }
+}
