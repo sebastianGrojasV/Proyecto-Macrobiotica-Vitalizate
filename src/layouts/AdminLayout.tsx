@@ -23,6 +23,7 @@ interface AdminLayoutProps {
 }
 
 const menuItems = [
+  { icon: Users, label: 'Usuarios', path: '/admin/users' },
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
   { icon: Package, label: 'Inventario', path: '/admin/inventory' },
   { icon: ShoppingCart, label: 'Compras', path: '/admin/purchases' },

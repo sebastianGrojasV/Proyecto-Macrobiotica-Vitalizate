@@ -51,6 +51,7 @@ export interface User {
   phone: string;
   role: 'customer' | 'admin' | 'accountant' | 'delivery';
   avatar?: string;
+  cedula?: string;
 }
 
 export interface Supplier {

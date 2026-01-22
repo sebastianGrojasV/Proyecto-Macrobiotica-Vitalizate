@@ -41,6 +41,7 @@ import Accounting from './pages/admin/Accounting';
 import Approvals from './pages/admin/Approvals';
 import AdminTraceability from './pages/admin/Traceability';
 import Analytics from './pages/admin/Analytics';
+import Users from './pages/admin/Users';
 
 import NotFound from './pages/NotFound';
 
@@ -65,7 +66,7 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/traceability" element={<Traceability />} />
-          
+
           {/* Customer Routes */}
           <Route path="/customer/dashboard" element={<CustomerDashboard />} />
           <Route path="/customer/orders" element={<CustomerOrders />} />
@@ -73,13 +74,13 @@ const App = () => (
           <Route path="/customer/returns" element={<CustomerReturns />} />
           <Route path="/customer/profile" element={<CustomerProfile />} />
           <Route path="/customer/favorites" element={<CustomerFavorites />} />
-          
+
           {/* Driver Routes */}
           <Route path="/driver/dashboard" element={<DriverDashboard />} />
           <Route path="/driver/orders" element={<DriverOrders />} />
           <Route path="/driver/map" element={<DriverMap />} />
           <Route path="/driver/history" element={<DriverHistory />} />
-          
+
           {/* Admin Routes */}
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/inventory" element={<Inventory />} />
@@ -91,7 +92,8 @@ const App = () => (
           <Route path="/admin/approvals" element={<Approvals />} />
           <Route path="/admin/traceability" element={<AdminTraceability />} />
           <Route path="/admin/analytics" element={<Analytics />} />
-          
+          <Route path="/admin/users" element={<Users />} />
+
           {/* Fallback */}
           <Route path="*" element={<NotFound />} />
         </Routes>
