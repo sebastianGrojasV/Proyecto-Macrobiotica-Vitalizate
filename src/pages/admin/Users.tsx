@@ -51,7 +51,8 @@ export default function Users() {
     const [users, setUsers] = useState<User[]>(initialUsers);
     const [searchTerm, setSearchTerm] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [newUser, setNewUser] = useState<Partial<User>>({
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const [newUser, setNewUser] = useState<Partial<User> & { password?: string }>({
         role: 'customer',
     });
 
@@ -74,38 +75,46 @@ export default function Users() {
     };
 
     const handleSaveUser = () => {
-        if (!newUser.name || !newUser.email || !newUser.role || !newUser.cedula) {
-            toast.error('Por favor complete todos los campos');
+        // Escenario 2: Validación de campos obligatorios
+        const missingFields = [];
+        if (!newUser.cedula) missingFields.push('Cédula');
+        if (!newUser.name) missingFields.push('Nombre');
+        if (!newUser.email) missingFields.push('Email');
+        if (!newUser.password) missingFields.push('Contraseña');
+        if (!newUser.role) missingFields.push('Rol');
+
+        if (missingFields.length > 0) {
+            toast.error(`Por favor complete los campos obligatorios: ${missingFields.join(', ')}`);
             return;
         }
 
         // Validación de formato
-        if (!validateCedula(newUser.cedula)) {
+        if (newUser.cedula && !validateCedula(newUser.cedula)) {
             toast.error('Formato de cédula incorrecto. Debe tener 9 dígitos.');
             return;
         }
 
         // Validación de duplicados
-        if (checkDuplicateCedula(newUser.cedula)) {
+        if (newUser.cedula && checkDuplicateCedula(newUser.cedula)) {
             toast.error('La cédula ya existe en el sistema.');
             return;
         }
 
-        // Escenario 1: Registro exitoso
+        // Escenario 1: Creación exitosa de usuario
         const user: User = {
             id: Math.random().toString(36).substr(2, 9),
-            name: newUser.name,
-            email: newUser.email,
+            name: newUser.name!,
+            email: newUser.email!,
             phone: newUser.phone || '',
             role: newUser.role as User['role'],
-            cedula: newUser.cedula,
+            cedula: newUser.cedula!,
             avatar: `https://i.pravatar.cc/150?u=${Math.random()}`,
         };
 
         setUsers([...users, user]);
         setIsDialogOpen(false);
         setNewUser({ role: 'customer' });
-        toast.success('Usuario registrado exitosamente');
+        toast.success('Usuario creado exitosamente');
     };
 
     const handleDeleteUser = (id: string) => {
@@ -193,7 +202,19 @@ export default function Users() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="phone">Teléfono</Label>
+                                    <Label htmlFor="password">Contraseña</Label>
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        placeholder="••••••••"
+                                        value={newUser.password || ''}
+                                        onChange={(e) =>
+                                            setNewUser({ ...newUser, password: e.target.value })
+                                        }
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="phone">Teléfono (Opcional)</Label>
                                     <Input
                                         id="phone"
                                         placeholder="8888-8888"
@@ -230,7 +251,7 @@ export default function Users() {
                                 >
                                     Cancelar
                                 </Button>
-                                <Button onClick={handleSaveUser}>Guardar Usuario</Button>
+                                <Button onClick={handleSaveUser}>Crear Usuario</Button>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
