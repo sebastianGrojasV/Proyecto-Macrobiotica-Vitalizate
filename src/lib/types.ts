@@ -52,6 +52,7 @@ export interface User {
   role: 'customer' | 'admin' | 'accountant' | 'delivery';
   avatar?: string;
   cedula?: string;
+  status?: 'active' | 'inactive';
 }
 
 export interface Supplier {

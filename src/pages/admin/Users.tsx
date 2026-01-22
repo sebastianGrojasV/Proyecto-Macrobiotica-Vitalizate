@@ -53,6 +53,7 @@ export default function Users() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [newUser, setNewUser] = useState<Partial<User> & { password?: string }>({
         role: 'customer',
+        status: 'active',
     });
     const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -110,6 +111,7 @@ export default function Users() {
                         ...newUser,
                         id: u.id, // Asegurar que el ID no cambie
                         // Si no se proveyó password, mantener el anterior (en un sistema real)
+                        status: newUser.status || u.status, // Asegurar que se guarde el estado
                     } as User;
                 }
                 return u;
@@ -124,6 +126,7 @@ export default function Users() {
                 phone: newUser.phone || '',
                 role: newUser.role as User['role'],
                 cedula: newUser.cedula!,
+                status: newUser.status as User['status'] || 'active',
                 avatar: `https://i.pravatar.cc/150?u=${Math.random()}`,
             };
             setUsers([...users, user]);
@@ -139,8 +142,10 @@ export default function Users() {
             email: user.email,
             phone: user.phone,
             role: user.role,
+
             cedula: user.cedula,
-            avatar: user.avatar
+            avatar: user.avatar,
+            status: user.status
         });
         setEditingId(user.id);
         setIsDialogOpen(true);
@@ -148,7 +153,7 @@ export default function Users() {
 
     const handleCloseDialog = () => {
         setIsDialogOpen(false);
-        setNewUser({ role: 'customer' });
+        setNewUser({ role: 'customer', status: 'active' });
         setEditingId(null);
     };
 
@@ -283,6 +288,24 @@ export default function Users() {
                                             <SelectItem value="delivery">Repartidor</SelectItem>
                                         </SelectContent>
                                     </Select>
+
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="status">Estado</Label>
+                                    <Select
+                                        value={newUser.status || 'active'}
+                                        onValueChange={(value: any) =>
+                                            setNewUser({ ...newUser, status: value })
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccione estado" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="active">Activo</SelectItem>
+                                            <SelectItem value="inactive">Inactivo</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </div>
                             <DialogFooter>
@@ -319,6 +342,7 @@ export default function Users() {
                                 <TableHead>Usuario</TableHead>
                                 <TableHead>Cédula</TableHead>
                                 <TableHead>Rol</TableHead>
+                                <TableHead>Estado</TableHead>
                                 <TableHead>Contacto</TableHead>
                                 <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
@@ -367,6 +391,16 @@ export default function Users() {
                                         </span>
                                     </TableCell>
                                     <TableCell>
+                                        <span
+                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.status === 'active'
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-red-100 text-red-800'
+                                                }`}
+                                        >
+                                            {user.status === 'active' ? 'Activo' : 'Inactivo'}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
                                         <div className="text-sm text-gray-500">{user.phone}</div>
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -397,6 +431,6 @@ export default function Users() {
                     </Table>
                 </div>
             </div>
-        </AdminLayout>
+        </AdminLayout >
     );
 }

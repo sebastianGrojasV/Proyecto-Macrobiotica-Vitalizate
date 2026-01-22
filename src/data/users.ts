@@ -7,7 +7,8 @@ export const users: User[] = [
         email: 'ana.garcia@vitalizate.cr',
         phone: '8888-1111',
         role: 'admin',
-        cedula: '111111111'
+        cedula: '111111111',
+        status: 'active'
     },
     {
         id: 'u2',
@@ -15,7 +16,8 @@ export const users: User[] = [
         email: 'carlos.rodriguez@vitalizate.cr',
         phone: '8888-2222',
         role: 'customer',
-        cedula: '222222222'
+        cedula: '222222222',
+        status: 'active'
     },
     {
         id: 'u3',
@@ -23,7 +25,8 @@ export const users: User[] = [
         email: 'maria.lopez@vitalizate.cr',
         phone: '8888-3333',
         role: 'accountant',
-        cedula: '333333333'
+        cedula: '333333333',
+        status: 'active'
     },
     {
         id: 'u4',
@@ -31,6 +34,7 @@ export const users: User[] = [
         email: 'juan.perez@vitalizate.cr',
         phone: '8888-4444',
         role: 'delivery',
-        cedula: '444444444'
+        cedula: '444444444',
+        status: 'active'
     }
 ];

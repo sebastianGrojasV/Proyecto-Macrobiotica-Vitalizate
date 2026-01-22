@@ -138,7 +138,7 @@ export default function Footer() {
             <ul className="space-y-3 mb-6">
               <li className="flex items-start space-x-2 text-sm text-gray-300">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span>Escazú, San José, Costa Rica. Del Multiplaza 200m oeste</span>
+                <span>Barrio San Jose, Alajuela, Costa Rica. Del Mega Super 100m al oeste</span>
               </li>
               <li className="flex items-center space-x-2 text-sm text-gray-300">
                 <Phone className="w-4 h-4 flex-shrink-0" />
