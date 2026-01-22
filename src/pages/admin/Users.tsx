@@ -46,6 +46,7 @@ import { toast } from 'sonner';
 import AdminLayout from '@/layouts/AdminLayout';
 import { User } from '@/lib/types';
 import { users as initialUsers } from '@/data/users';
+import { ROLE_PERMISSIONS, RoleType } from '@/data/roles';
 
 export default function Users() {
     const [users, setUsers] = useState<User[]>(initialUsers);
@@ -288,6 +289,16 @@ export default function Users() {
                                             <SelectItem value="delivery">Repartidor</SelectItem>
                                         </SelectContent>
                                     </Select>
+                                    {newUser.role && (
+                                        <div className="mt-2 text-xs bg-gray-50 p-2 rounded border border-gray-100">
+                                            <p className="font-semibold text-gray-700 mb-1">Permisos:</p>
+                                            <ul className="list-disc list-inside space-y-0.5 text-gray-600">
+                                                {ROLE_PERMISSIONS[newUser.role as RoleType]?.map((permission, index) => (
+                                                    <li key={index}>{permission}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
 
                                 </div>
                                 <div className="space-y-2">
