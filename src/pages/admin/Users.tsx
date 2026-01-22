@@ -51,10 +51,10 @@ export default function Users() {
     const [users, setUsers] = useState<User[]>(initialUsers);
     const [searchTerm, setSearchTerm] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    /* eslint-disable @typescript-eslint/no-explicit-any */
     const [newUser, setNewUser] = useState<Partial<User> & { password?: string }>({
         role: 'customer',
     });
+    const [editingId, setEditingId] = useState<string | null>(null);
 
     const filteredUsers = users.filter(
         (user) =>
@@ -69,9 +69,9 @@ export default function Users() {
         return cedulaRegex.test(cedula);
     };
 
-    const checkDuplicateCedula = (cedula: string) => {
+    const checkDuplicateCedula = (cedula: string, excludeId?: string) => {
         // Escenario 2: Detección de cédula duplicada
-        return users.some((user) => user.cedula === cedula);
+        return users.some((user) => user.cedula === cedula && user.id !== excludeId);
     };
 
     const handleSaveUser = () => {
@@ -80,7 +80,8 @@ export default function Users() {
         if (!newUser.cedula) missingFields.push('Cédula');
         if (!newUser.name) missingFields.push('Nombre');
         if (!newUser.email) missingFields.push('Email');
-        if (!newUser.password) missingFields.push('Contraseña');
+        // La contraseña solo es obligatoria al crear, no al editar
+        if (!editingId && !newUser.password) missingFields.push('Contraseña');
         if (!newUser.role) missingFields.push('Rol');
 
         if (missingFields.length > 0) {
@@ -95,26 +96,60 @@ export default function Users() {
         }
 
         // Validación de duplicados
-        if (newUser.cedula && checkDuplicateCedula(newUser.cedula)) {
+        if (newUser.cedula && checkDuplicateCedula(newUser.cedula, editingId || undefined)) {
             toast.error('La cédula ya existe en el sistema.');
             return;
         }
 
-        // Escenario 1: Creación exitosa de usuario
-        const user: User = {
-            id: Math.random().toString(36).substr(2, 9),
-            name: newUser.name!,
-            email: newUser.email!,
-            phone: newUser.phone || '',
-            role: newUser.role as User['role'],
-            cedula: newUser.cedula!,
-            avatar: `https://i.pravatar.cc/150?u=${Math.random()}`,
-        };
+        if (editingId) {
+            // Escenario 1: Edición exitosa de usuario
+            setUsers(users.map((u) => {
+                if (u.id === editingId) {
+                    return {
+                        ...u,
+                        ...newUser,
+                        id: u.id, // Asegurar que el ID no cambie
+                        // Si no se proveyó password, mantener el anterior (en un sistema real)
+                    } as User;
+                }
+                return u;
+            }));
+            toast.success('Usuario actualizado exitosamente');
+        } else {
+            // Escenario 1: Creación exitosa de usuario
+            const user: User = {
+                id: Math.random().toString(36).substr(2, 9),
+                name: newUser.name!,
+                email: newUser.email!,
+                phone: newUser.phone || '',
+                role: newUser.role as User['role'],
+                cedula: newUser.cedula!,
+                avatar: `https://i.pravatar.cc/150?u=${Math.random()}`,
+            };
+            setUsers([...users, user]);
+            toast.success('Usuario creado exitosamente');
+        }
 
-        setUsers([...users, user]);
+        handleCloseDialog();
+    };
+
+    const handleEditUser = (user: User) => {
+        setNewUser({
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            cedula: user.cedula,
+            avatar: user.avatar
+        });
+        setEditingId(user.id);
+        setIsDialogOpen(true);
+    };
+
+    const handleCloseDialog = () => {
         setIsDialogOpen(false);
         setNewUser({ role: 'customer' });
-        toast.success('Usuario creado exitosamente');
+        setEditingId(null);
     };
 
     const handleDeleteUser = (id: string) => {
@@ -149,7 +184,13 @@ export default function Users() {
                             Administra los usuarios y sus permisos
                         </p>
                     </div>
-                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <Dialog
+                        open={isDialogOpen}
+                        onOpenChange={(open) => {
+                            if (!open) handleCloseDialog();
+                            else setIsDialogOpen(true);
+                        }}
+                    >
                         <DialogTrigger asChild>
                             <Button className="bg-primary hover:bg-forest text-white gap-2">
                                 <Plus className="w-4 h-4" />
@@ -158,7 +199,7 @@ export default function Users() {
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Agregar Nuevo Usuario</DialogTitle>
+                                <DialogTitle>{editingId ? 'Editar Usuario' : 'Agregar Nuevo Usuario'}</DialogTitle>
                                 <DialogDescription>
                                     Ingrese los datos del nuevo usuario. La cédula es obligatoria para validación.
                                 </DialogDescription>
@@ -202,7 +243,7 @@ export default function Users() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="password">Contraseña</Label>
+                                    <Label htmlFor="password">Contraseña {editingId && '(Dejar en blanco para mantener)'}</Label>
                                     <Input
                                         id="password"
                                         type="password"
@@ -247,11 +288,13 @@ export default function Users() {
                             <DialogFooter>
                                 <Button
                                     variant="outline"
-                                    onClick={() => setIsDialogOpen(false)}
+                                    onClick={handleCloseDialog}
                                 >
                                     Cancelar
                                 </Button>
-                                <Button onClick={handleSaveUser}>Crear Usuario</Button>
+                                <Button onClick={handleSaveUser}>
+                                    {editingId ? 'Guardar Cambios' : 'Crear Usuario'}
+                                </Button>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
@@ -334,7 +377,7 @@ export default function Users() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem className="gap-2">
+                                                <DropdownMenuItem className="gap-2" onClick={() => handleEditUser(user)}>
                                                     <Pencil className="w-4 h-4" />
                                                     Editar
                                                 </DropdownMenuItem>
