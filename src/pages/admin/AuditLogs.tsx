@@ -10,7 +10,8 @@ import {
     Users,
     ShoppingCart,
     Package,
-    Lock
+    Lock,
+    X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +32,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { auditLogs as initialLogs } from '@/data/auditLogs';
-import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -48,6 +49,7 @@ export default function AuditLogs() {
     const [filterAction, setFilterAction] = useState('all');
     const [filterModule, setFilterModule] = useState('all');
     const [date, setDate] = useState<DateRange | undefined>(undefined);
+    const [datePickerOpen, setDatePickerOpen] = useState(false);
 
     const filteredLogs = logs.filter(log => {
         const matchesSearch =
@@ -101,6 +103,32 @@ export default function AuditLogs() {
             case 'login': return 'Inicio de Sesión';
             case 'logout': return 'Cierre de Sesión';
             default: return action;
+        }
+    };
+
+    const handlePresetSelect = (preset: string) => {
+        const today = new Date();
+        switch (preset) {
+            case 'today':
+                setDate({ from: today, to: today });
+                break;
+            case 'yesterday':
+                const yesterday = subDays(today, 1);
+                setDate({ from: yesterday, to: yesterday });
+                break;
+            case 'last7':
+                setDate({ from: subDays(today, 6), to: today });
+                break;
+            case 'last30':
+                setDate({ from: subDays(today, 29), to: today });
+                break;
+            case 'thisMonth':
+                setDate({ from: startOfMonth(today), to: endOfMonth(today) });
+                break;
+            case 'lastMonth':
+                const lastMonth = subMonths(today, 1);
+                setDate({ from: startOfMonth(lastMonth), to: endOfMonth(lastMonth) });
+                break;
         }
     };
 
@@ -166,7 +194,7 @@ export default function AuditLogs() {
                                 </SelectContent>
                             </Select>
 
-                            <Popover>
+                            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                                 <PopoverTrigger asChild>
                                     <Button
                                         id="date"
@@ -192,15 +220,92 @@ export default function AuditLogs() {
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        initialFocus
-                                        mode="range"
-                                        defaultMonth={date?.from}
-                                        selected={date}
-                                        onSelect={setDate}
-                                        numberOfMonths={2}
-                                        locale={es}
-                                    />
+                                    <div className="flex">
+                                        <div className="border-r border-gray-200 p-2 space-y-1 w-40 bg-gray-50/50">
+                                            <p className="text-xs font-semibold text-gray-500 mb-2 px-2 pt-1">Rangos Comunes</p>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="w-full justify-start text-sm h-8"
+                                                onClick={() => handlePresetSelect('today')}
+                                            >
+                                                Hoy
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="w-full justify-start text-sm h-8"
+                                                onClick={() => handlePresetSelect('yesterday')}
+                                            >
+                                                Ayer
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="w-full justify-start text-sm h-8"
+                                                onClick={() => handlePresetSelect('last7')}
+                                            >
+                                                Últimos 7 días
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="w-full justify-start text-sm h-8"
+                                                onClick={() => handlePresetSelect('last30')}
+                                            >
+                                                Últimos 30 días
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="w-full justify-start text-sm h-8"
+                                                onClick={() => handlePresetSelect('thisMonth')}
+                                            >
+                                                Este Mes
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="w-full justify-start text-sm h-8"
+                                                onClick={() => handlePresetSelect('lastMonth')}
+                                            >
+                                                Mes Pasado
+                                            </Button>
+                                            <div className="border-t border-gray-200 my-2 pt-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="w-full justify-start text-sm h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                    onClick={() => setDate(undefined)}
+                                                >
+                                                    <X className="w-3 h-3 mr-2" />
+                                                    Limpiar
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        <div className="p-0">
+                                            <Calendar
+                                                initialFocus
+                                                mode="range"
+                                                defaultMonth={date?.from}
+                                                selected={date}
+                                                onSelect={setDate}
+                                                numberOfMonths={2}
+                                                locale={es}
+                                                classNames={{
+                                                    month: "space-y-4 mx-2" // Add margin between months
+                                                }}
+                                            />
+                                            <div className="border-t border-gray-200 p-3 bg-gray-50/30 flex justify-end gap-2">
+                                                <Button variant="outline" size="sm" onClick={() => setDatePickerOpen(false)}>
+                                                    Cerrar
+                                                </Button>
+                                                <Button size="sm" onClick={() => setDatePickerOpen(false)}>
+                                                    Aplicar
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </PopoverContent>
                             </Popover>
                         </div>
