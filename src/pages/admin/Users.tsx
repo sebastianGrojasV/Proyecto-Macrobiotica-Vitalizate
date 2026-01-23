@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import {
     Plus,
     Search,
@@ -45,11 +46,12 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import AdminLayout from '@/layouts/AdminLayout';
 import { User } from '@/lib/types';
-import { users as initialUsers } from '@/data/users';
+// import { users as initialUsers } from '@/data/users';
 import { ROLE_PERMISSIONS, RoleType } from '@/data/roles';
 
 export default function Users() {
-    const [users, setUsers] = useState<User[]>(initialUsers);
+    const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [newUser, setNewUser] = useState<Partial<User> & { password?: string }>({
@@ -57,6 +59,27 @@ export default function Users() {
         status: 'active',
     });
     const [editingId, setEditingId] = useState<string | null>(null);
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const fetchUsers = async () => {
+        try {
+            setLoading(true);
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*');
+
+            if (error) throw error;
+            setUsers(data || []);
+        } catch (error: any) {
+            toast.error('Error al cargar usuarios');
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const filteredUsers = users.filter(
         (user) =>
@@ -76,7 +99,7 @@ export default function Users() {
         return users.some((user) => user.cedula === cedula && user.id !== excludeId);
     };
 
-    const handleSaveUser = () => {
+    const handleSaveUser = async () => {
         // Escenario 2: Validación de campos obligatorios
         const missingFields = [];
         if (!newUser.cedula) missingFields.push('Cédula');
@@ -105,36 +128,36 @@ export default function Users() {
 
         if (editingId) {
             // Escenario 1: Edición exitosa de usuario
-            setUsers(users.map((u) => {
-                if (u.id === editingId) {
-                    return {
-                        ...u,
-                        ...newUser,
-                        id: u.id, // Asegurar que el ID no cambie
-                        // Si no se proveyó password, mantener el anterior (en un sistema real)
-                        status: newUser.status || u.status, // Asegurar que se guarde el estado
-                    } as User;
-                }
-                return u;
-            }));
-            toast.success('Usuario actualizado exitosamente');
-        } else {
-            // Escenario 1: Creación exitosa de usuario
-            const user: User = {
-                id: Math.random().toString(36).substr(2, 9),
-                name: newUser.name!,
-                email: newUser.email!,
-                phone: newUser.phone || '',
-                role: newUser.role as User['role'],
-                cedula: newUser.cedula!,
-                status: newUser.status as User['status'] || 'active',
-                avatar: `https://i.pravatar.cc/150?u=${Math.random()}`,
-            };
-            setUsers([...users, user]);
-            toast.success('Usuario creado exitosamente');
-        }
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .update({
+                        name: newUser.name,
+                        email: newUser.email,
+                        cedula: newUser.cedula,
+                        role: newUser.role,
+                        status: newUser.status,
+                        phone: newUser.phone
+                    })
+                    .eq('id', editingId);
 
-        handleCloseDialog();
+                if (error) throw error;
+
+                setUsers(users.map((u) => {
+                    if (u.id === editingId) {
+                        return { ...u, ...newUser, id: u.id } as User;
+                    }
+                    return u;
+                }));
+                toast.success('Usuario actualizado exitosamente');
+                handleCloseDialog();
+            } catch (error: any) {
+                toast.error('Error al actualizar usuario');
+            }
+        } else {
+            // Creation is restricted in client-side Supabase for security (needs Admin API)
+            toast.error('La creación de usuarios desde el panel de admin requiere API backend.');
+        }
     };
 
     const handleEditUser = (user: User) => {
@@ -158,9 +181,22 @@ export default function Users() {
         setEditingId(null);
     };
 
-    const handleDeleteUser = (id: string) => {
-        setUsers(users.filter((u) => u.id !== id));
-        toast.success('Usuario eliminado');
+    const handleDeleteUser = async (id: string) => {
+        // Deleting from auth.users is not allowed from client
+        // We can mimic "deletion" by setting status to inactive or deleting profile
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            setUsers(users.filter((u) => u.id !== id));
+            toast.success('Usuario eliminado (Perfil)');
+        } catch (error) {
+            toast.error('Error al eliminar usuario');
+        }
     };
 
     const getRoleBadgeColor = (role: string) => {

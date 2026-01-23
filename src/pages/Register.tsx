@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Leaf, Mail, Lock, User, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,8 +7,59 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import PublicLayout from '@/layouts/PublicLayout';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 export default function Register() {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Las contraseñas no coinciden');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            name: `${formData.firstName} ${formData.lastName}`.trim(),
+            phone: formData.phone,
+            role: 'customer', // Default role
+            avatar_url: `https://i.pravatar.cc/150?u=${Math.random()}`,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success('Registro exitoso. Por favor verifica tu correo.');
+      navigate('/login');
+    } catch (error: any) {
+      toast.error(error.message || 'Error al registrarse');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
   return (
     <PublicLayout>
       <div className="container mx-auto px-4 py-16">
@@ -32,95 +84,113 @@ export default function Register() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">Nombre</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">Nombre</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <Input
+                        id="firstName"
+                        placeholder="Juan"
+                        className="pl-10"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Apellido</Label>
                     <Input
-                      id="firstName"
-                      placeholder="Juan"
-                      className="pl-10"
+                      id="lastName"
+                      placeholder="Pérez"
+                      value={formData.lastName}
+                      onChange={handleChange}
                     />
                   </div>
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Apellido</Label>
-                  <Input
-                    id="lastName"
-                    placeholder="Pérez"
-                  />
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="tu@email.com"
+                      className="pl-10"
+                      value={formData.email}
+                      onChange={handleChange}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="tu@email.com"
-                    className="pl-10"
-                  />
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Teléfono</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                      id="phone"
+                      placeholder="+506 8888-8888"
+                      className="pl-10"
+                      value={formData.phone}
+                      onChange={handleChange}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Teléfono</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input
-                    id="phone"
-                    placeholder="+506 8888-8888"
-                    className="pl-10"
-                  />
+                <div className="space-y-2">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      className="pl-10"
+                      value={formData.password}
+                      onChange={handleChange}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    className="pl-10"
-                  />
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      className="pl-10"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    className="pl-10"
-                  />
+                <div className="flex items-start space-x-2">
+                  <Checkbox id="terms" className="mt-1" />
+                  <Label htmlFor="terms" className="text-sm cursor-pointer leading-relaxed">
+                    Acepto los{' '}
+                    <Link to="/terms" className="text-primary hover:underline">
+                      Términos y Condiciones
+                    </Link>{' '}
+                    y la{' '}
+                    <Link to="/privacy" className="text-primary hover:underline">
+                      Política de Privacidad
+                    </Link>
+                  </Label>
                 </div>
-              </div>
 
-              <div className="flex items-start space-x-2">
-                <Checkbox id="terms" className="mt-1" />
-                <Label htmlFor="terms" className="text-sm cursor-pointer leading-relaxed">
-                  Acepto los{' '}
-                  <Link to="/terms" className="text-primary hover:underline">
-                    Términos y Condiciones
-                  </Link>{' '}
-                  y la{' '}
-                  <Link to="/privacy" className="text-primary hover:underline">
-                    Política de Privacidad
-                  </Link>
-                </Label>
-              </div>
-
-              <Button className="w-full bg-primary hover:bg-forest text-white h-11">
-                Crear Cuenta
-              </Button>
+                <Button
+                  type="submit"
+                  className="w-full bg-primary hover:bg-forest text-white h-11"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Registrando...' : 'Crear Cuenta'}
+                </Button>
+              </form>
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
