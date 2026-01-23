@@ -14,61 +14,74 @@ const AuthContext = createContext<AuthContextType>({
     session: null,
     user: null,
     profile: null,
-    loading: true,
-    isAdmin: false,
+    loading: false,
+    isAdmin: true, // Default to true for demo
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+    // Mock state for demo
     const [session, setSession] = useState<Session | null>(null);
-    const [user, setUser] = useState<User | null>(null);
-    const [profile, setProfile] = useState<any | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState<User | null>({
+        id: 'mock-user-id',
+        app_metadata: {},
+        user_metadata: {},
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+    });
+    const [profile, setProfile] = useState<any | null>({
+        id: 'mock-user-id',
+        role: 'admin',
+        name: 'Admin Demo',
+        email: 'admin@demo.com'
+    });
+    const [loading, setLoading] = useState(false);
 
+    // Supabase logic disabled for demo
+    /*
     useEffect(() => {
-        // Check active sessions and sets the user
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchProfile(session.user.id);
-            } else {
-                setLoading(false);
-            }
-        });
-
-        // Listen for changes on auth state (logged in, signed out, etc.)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchProfile(session.user.id);
-            } else {
-                setProfile(null);
-                setLoading(false);
-            }
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
-    const fetchProfile = async (userId: string) => {
-        try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', userId)
-                .single();
-
-            if (error) throw error;
-            setProfile(data);
-        } catch (error) {
-            console.error('Error fetching profile:', error);
-        } finally {
-            setLoading(false);
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchProfile(session.user.id);
+        } else {
+          setLoading(false);
         }
+      });
+  
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchProfile(session.user.id);
+        } else {
+          setProfile(null);
+          setLoading(false);
+        }
+      });
+  
+      return () => subscription.unsubscribe();
+    }, []);
+  
+    const fetchProfile = async (userId: string) => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        
+        if (error) throw error;
+        setProfile(data);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
+      }
     };
+    */
 
-    const isAdmin = profile?.role === 'admin';
+    const isAdmin = true; // Always admin for demo
 
     return (
         <AuthContext.Provider value={{ session, user, profile, loading, isAdmin }}>

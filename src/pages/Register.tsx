@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import PublicLayout from '@/layouts/PublicLayout';
-import { supabase } from '@/lib/supabase';
+// import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export default function Register() {
@@ -32,8 +32,16 @@ export default function Register() {
 
     setIsLoading(true);
 
+    // Mock registration for demo
+    setTimeout(() => {
+      setIsLoading(false);
+      toast.success('Registro exitoso (Demo). Tu cuenta ya está activa.');
+      navigate('/login');
+    }, 1500);
+
+    /* Supabase Logic Disabled
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -43,23 +51,28 @@ export default function Register() {
             role: 'customer', // Default role
             avatar_url: `https://i.pravatar.cc/150?u=${Math.random()}`,
           },
+          emailRedirectTo: `${window.location.origin}/login`,
         },
       });
 
-      if (error) throw error;
-
-      toast.success('Registro exitoso. Por favor verifica tu correo.');
+      if (data.session) {
+        toast.success('Registro exitoso. Tu cuenta ya está activa.');
+      } else {
+        toast.success('Registro exitoso. Por favor verifica tu correo.');
+      }
       navigate('/login');
     } catch (error: any) {
       toast.error(error.message || 'Error al registrarse');
     } finally {
       setIsLoading(false);
     }
+    */
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
+
   return (
     <PublicLayout>
       <div className="container mx-auto px-4 py-16">

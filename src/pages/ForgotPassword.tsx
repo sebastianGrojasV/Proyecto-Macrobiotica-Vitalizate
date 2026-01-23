@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import PublicLayout from '@/layouts/PublicLayout';
-import { supabase } from '@/lib/supabase';
+// import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export default function ForgotPassword() {
@@ -18,11 +18,19 @@ export default function ForgotPassword() {
         e.preventDefault();
         setIsLoading(true);
 
+        // Mock forgot password for demo
+        setTimeout(() => {
+            setIsLoading(false);
+            toast.success('Se ha enviado un enlace de recuperación a tu correo (Demo)');
+            // navigate('/login'); 
+        }, 1500);
+
+        /* Supabase Logic Disabled
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
                 redirectTo: `${window.location.origin}/reset-password`,
             });
-
+            
             if (error) throw error;
 
             toast.success('Se ha enviado un enlace de recuperación a tu correo');
@@ -32,6 +40,7 @@ export default function ForgotPassword() {
         } finally {
             setIsLoading(false);
         }
+        */
     };
 
     return (

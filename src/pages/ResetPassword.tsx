@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import PublicLayout from '@/layouts/PublicLayout';
-import { supabase } from '@/lib/supabase';
+// import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export default function ResetPassword() {
@@ -17,6 +17,7 @@ export default function ResetPassword() {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
+    /* Supabase Logic Disabled
     useEffect(() => {
         // Optional: Check if we have a session (hash fragment)
         supabase.auth.onAuthStateChange((event, session) => {
@@ -25,6 +26,7 @@ export default function ResetPassword() {
             }
         });
     }, []);
+    */
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -41,6 +43,14 @@ export default function ResetPassword() {
 
         setIsLoading(true);
 
+        // Mock password update for demo
+        setTimeout(() => {
+            setIsLoading(false);
+            toast.success('Contraseña actualizada exitosamente (Demo)');
+            navigate('/login');
+        }, 1500);
+
+        /* Supabase Logic Disabled
         try {
             const { error } = await supabase.auth.updateUser({
                 password: passwords.password
@@ -55,6 +65,7 @@ export default function ResetPassword() {
         } finally {
             setIsLoading(false);
         }
+        */
     };
 
     return (

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import PublicLayout from '@/layouts/PublicLayout';
-import { supabase } from '@/lib/supabase';
+// import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export default function Login() {
@@ -20,6 +20,14 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
 
+    // Mock login for demo
+    setTimeout(() => {
+      setIsLoading(false);
+      toast.success('Inicio de sesión exitoso (Demo)');
+      navigate('/admin/dashboard');
+    }, 1000);
+
+    /* Supabase Logic Disabled
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -29,13 +37,15 @@ export default function Login() {
       if (error) throw error;
 
       toast.success('Inicio de sesión exitoso');
-      navigate('/admin/dashboard'); // Or logic to direct based on role
+      navigate('/admin/dashboard'); 
     } catch (error: any) {
       toast.error(error.message || 'Error al iniciar sesión');
     } finally {
       setIsLoading(false);
     }
+    */
   };
+
   return (
     <PublicLayout>
       <div className="container mx-auto px-4 py-16">
