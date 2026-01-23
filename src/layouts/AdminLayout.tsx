@@ -14,6 +14,7 @@ import {
   X,
   Leaf,
   LogOut,
+  ClipboardList,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -32,6 +33,7 @@ const menuItems = [
   { icon: FileText, label: 'Facturación', path: '/admin/invoicing' },
   { icon: DollarSign, label: 'Contabilidad', path: '/admin/accounting' },
   { icon: CheckSquare, label: 'Aprobaciones', path: '/admin/approvals' },
+  { icon: ClipboardList, label: 'Bitácora', path: '/admin/audit-logs' },
   { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
   { icon: QrCode, label: 'Trazabilidad', path: '/admin/traceability' },
 ];

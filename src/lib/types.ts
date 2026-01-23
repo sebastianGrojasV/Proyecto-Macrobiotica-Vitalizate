@@ -158,3 +158,15 @@ export interface ChatMessage {
   timestamp: string;
   recommendations?: Product[];
 }
+
+export interface AuditLog {
+  id: string;
+  userId: string;
+  userName: string;
+  userRole: string; // 'admin' | 'customer' | etc
+  action: 'create' | 'update' | 'delete' | 'login' | 'logout' | 'approve' | 'reject';
+  details: string;
+  timestamp: string;
+  ipAddress?: string;
+  module: 'users' | 'inventory' | 'orders' | 'auth' | 'system';
+}

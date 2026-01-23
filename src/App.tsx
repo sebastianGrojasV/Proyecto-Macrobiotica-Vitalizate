@@ -1,7 +1,7 @@
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 // Public Pages
@@ -14,6 +14,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import AuditLogs from './pages/admin/AuditLogs';
 import TrackingPublic from './pages/TrackingPublic';
 import About from './pages/About';
 import Contact from './pages/Contact';
@@ -100,6 +101,8 @@ const App = () => (
             <Route path="/admin/traceability" element={<AdminTraceability />} />
             <Route path="/admin/analytics" element={<Analytics />} />
             <Route path="/admin/users" element={<Users />} />
+            <Route path="/admin/audit-logs" element={<AuditLogs />} />
+            <Route path="/admin/dashboard" element={<Navigate to="/admin/users" />} />
 
             {/* Fallback */}
             <Route path="*" element={<NotFound />} />
