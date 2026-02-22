@@ -1,6 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 
-namespace Abstracciones.Interfaces.DataAccess
+namespace Abstracciones.Interfaces.DA
 {
     public interface IRepositorioDapper
     {

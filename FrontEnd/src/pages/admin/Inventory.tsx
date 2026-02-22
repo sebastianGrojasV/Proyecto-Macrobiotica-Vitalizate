@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from "react";
+import { obtenerCategorias, CategoriaDto } from "@/api/categorias.service";
 import { Package, Search, Plus, Edit, Trash2, AlertTriangle, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,9 +22,27 @@ import {
 } from '@/components/ui/select';
 import AdminLayout from '@/layouts/AdminLayout';
 import { mockProducts } from '@/data/products';
-import { INVENTORY_STATUS, formatCurrency, CATEGORIES } from '@/lib/constants';
+import { INVENTORY_STATUS, formatCurrency } from '@/lib/constants';
 
 export default function Inventory() {
+  const [categorias, setCategorias] = useState<CategoriaDto[]>([]);
+  const [cargandoCategorias, setCargandoCategorias] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setCargandoCategorias(true);
+        const data = await obtenerCategorias();
+        setCategorias(data);
+      } catch (e) {
+        console.error("Error cargando categorías:", e);
+        setCategorias([]);
+      } finally {
+        setCargandoCategorias(false);
+      }
+    })();
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -151,9 +170,19 @@ export default function Inventory() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas las categorías</SelectItem>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
+                  
+                  {cargandoCategorias ? (
+                    <SelectItem value="loading" disabled>
+                      Cargando...
+                    </SelectItem>
+                  ) : (
+                    categorias.map((c) => (
+                      <SelectItem key={c.id} value={c.name}>
+                        {c.name}
+                      </SelectItem>
+                    ))
+                  )}
+                  
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
