@@ -1,7 +1,7 @@
-using Abstracciones.Interfaces.DataAccess;
+using Abstracciones.Interfaces.DA;
 using Abstracciones.Interfaces.Flujo;
-using DataAccess;
-using DataAccess.Repositorios;
+using DA;
+using DA.Repositorios;
 using Flujo;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,7 +13,13 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+
+// Inyección de dependencias
+builder.Services.AddScoped<ICategoriaFlujo, CategoriaFlujo>();
+builder.Services.AddScoped<ICategoriaDA, CategoriaDA>();
 builder.Services.AddScoped<IRepositorioDapper, RepositorioDapper>();
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

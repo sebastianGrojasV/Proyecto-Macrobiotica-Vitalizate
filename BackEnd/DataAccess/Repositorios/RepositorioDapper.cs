@@ -1,8 +1,8 @@
-﻿using Abstracciones.Interfaces.DataAccess;
+﻿using Abstracciones.Interfaces.DA;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 
-namespace DataAccess.Repositorios
+namespace DA.Repositorios
 {
     public class RepositorioDapper : IRepositorioDapper
     {

@@ -1,0 +1,5 @@
+﻿CREATE TABLE [auth].[users] (
+    [id] UNIQUEIDENTIFIER NOT NULL,
+    CONSTRAINT [users_pkey] PRIMARY KEY CLUSTERED ([id] ASC)
+);
+
