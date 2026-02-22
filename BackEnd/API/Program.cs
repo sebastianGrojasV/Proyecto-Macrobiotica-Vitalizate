@@ -1,3 +1,9 @@
+using Abstracciones.Interfaces.DataAccess;
+using Abstracciones.Interfaces.Flujo;
+using DataAccess;
+using DataAccess.Repositorios;
+using Flujo;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -7,6 +13,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddScoped<IRepositorioDapper, RepositorioDapper>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
