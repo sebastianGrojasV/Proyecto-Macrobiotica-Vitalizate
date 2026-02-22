@@ -15,7 +15,7 @@ namespace Abstracciones.Modelos
 
         [Display(Name = "URL de la imagen")]
         [StringLength(1024, ErrorMessage = "El URL debe contener un máximo de 1024 caracteres", MinimumLength = 0)]
-        public string image_url { get; set; }
+        public string? image_url { get; set; }
     }
 
     public class CategoriaResponse : CategoriaBase { 
