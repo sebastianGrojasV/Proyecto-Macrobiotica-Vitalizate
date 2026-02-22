@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Filter, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -21,9 +21,28 @@ import {
 import PublicLayout from '@/layouts/PublicLayout';
 import ProductCard from '@/components/custom/ProductCard';
 import { mockProducts } from '@/data/products';
-import { CATEGORIES, formatCurrency } from '@/lib/constants';
+import { formatCurrency } from '@/lib/constants';
+import { obtenerCategorias, CategoriaDto } from '@/api/categorias.service';
 
 export default function Catalog() {
+  const [categorias, setCategorias] = useState<CategoriaDto[]>([]);
+  const [cargandoCategorias, setCargandoCategorias] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setCargandoCategorias(true);
+        const data = await obtenerCategorias();
+        setCategorias(data);
+      } catch (e) {
+        console.error('Error cargando categorías:', e);
+        setCategorias([]);
+      } finally {
+        setCargandoCategorias(false);
+      }
+    })();
+  }, []);
+
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState([0, 35000]); // Actualizado para colones
   const [sortBy, setSortBy] = useState('popular');
@@ -57,24 +76,31 @@ export default function Catalog() {
       <div>
         <h3 className="font-heading font-semibold text-lg mb-4">Categorías</h3>
         <div className="space-y-3">
-          {CATEGORIES.map((category) => (
-            <div key={category} className="flex items-center space-x-2">
-              <Checkbox
-                id={category}
-                checked={selectedCategories.includes(category)}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    setSelectedCategories([...selectedCategories, category]);
-                  } else {
-                    setSelectedCategories(selectedCategories.filter((c) => c !== category));
-                  }
-                }}
-              />
-              <Label htmlFor={category} className="text-sm cursor-pointer">
-                {category}
-              </Label>
-            </div>
-          ))}
+
+          {cargandoCategorias ? (
+            <p className="text-sm text-gray-500">Cargando categorías...</p>
+          ) : categorias.length === 0 ? (
+            <p className="text-sm text-gray-500">No hay categorías disponibles.</p>
+          ) : (
+            categorias.map((c) => (
+              <div key={c.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={c.name}
+                  checked={selectedCategories.includes(c.name)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setSelectedCategories([...selectedCategories, c.name]);
+                    } else {
+                      setSelectedCategories(selectedCategories.filter((x) => x !== c.name));
+                    }
+                  }}
+                />
+                <Label htmlFor={c.name} className="text-sm cursor-pointer">
+                  {c.name}
+                </Label>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -107,7 +133,7 @@ export default function Catalog() {
       >
         Limpiar Filtros
       </Button>
-    </div>
+    </div >
   );
 
   return (

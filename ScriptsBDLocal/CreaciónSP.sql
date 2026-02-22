@@ -111,3 +111,145 @@
 --GO
 
 -- =============================================
+-- PRODUCTOS
+-- =============================================
+--CREATE PROCEDURE AgregarProducto
+--    @Id AS uniqueidentifier,
+--    @Name AS nvarchar(max),
+--    @Description AS nvarchar(max) = NULL,
+--    @Price AS decimal(18,2),
+--    @StockQuantity AS int,
+--    @CategoryId AS uniqueidentifier = NULL,
+--    @ImageUrl AS nvarchar(max) = NULL,
+--    @IsActive AS bit
+--AS
+--BEGIN
+--    SET NOCOUNT ON;
+
+--    BEGIN TRANSACTION;
+
+--    INSERT INTO [dbo].[products]
+--           ([id]
+--           ,[name]
+--           ,[description]
+--           ,[price]
+--           ,[stock_quantity]
+--           ,[category_id]
+--           ,[image_url]
+--           ,[is_active]
+--           ,[created_at])
+--    VALUES
+--           (@Id
+--           ,@Name
+--           ,@Description
+--           ,@Price
+--           ,@StockQuantity
+--           ,@CategoryId
+--           ,@ImageUrl
+--           ,@IsActive
+--           ,SYSDATETIMEOFFSET())
+
+--    -- Retornar solo el Id
+--    SELECT @Id
+--    COMMIT TRANSACTION;
+--END
+--GO
+
+---- =============================================
+--CREATE PROCEDURE EditarProducto
+--    @Id AS uniqueidentifier,
+--    @Name AS nvarchar(max),
+--    @Description AS nvarchar(max) = NULL,
+--    @Price AS decimal(18,2),
+--    @StockQuantity AS int,
+--    @CategoryId AS uniqueidentifier = NULL,
+--    @ImageUrl AS nvarchar(max) = NULL,
+--    @IsActive AS bit
+--AS
+--BEGIN
+--    SET NOCOUNT ON;
+
+--    BEGIN TRANSACTION
+--    UPDATE [dbo].[products]
+--       SET [name] = @Name,
+--           [description] = @Description,
+--           [price] = @Price,
+--           [stock_quantity] = @StockQuantity,
+--           [category_id] = @CategoryId,
+--           [image_url] = @ImageUrl,
+--           [is_active] = @IsActive
+--     WHERE [id] = @Id
+
+--    -- Retornar solo el Id
+--    SELECT @Id
+--    COMMIT TRANSACTION
+--END
+--GO
+
+---- =============================================
+--CREATE PROCEDURE EliminarProducto
+--    @Id AS uniqueidentifier
+--AS
+--BEGIN
+--    SET NOCOUNT ON;
+
+--    BEGIN TRANSACTION
+--    UPDATE [dbo].[products]
+--       SET [is_active] = 0
+--     WHERE [id] = @Id
+
+--    -- Retornar solo el Id
+--    SELECT @Id
+--    COMMIT TRANSACTION
+--END
+--GO
+
+---- =============================================
+--CREATE PROCEDURE ObtenerProductos
+--AS
+--BEGIN
+--    SET NOCOUNT ON;
+
+--    SELECT
+--        p.[id],
+--        p.[name],
+--        p.[description],
+--        p.[price],
+--        p.[stock_quantity],
+--        p.[category_id],
+--        p.[image_url],
+--        p.[is_active],
+--        p.[created_at],
+--        c.[name] AS Categoria
+--    FROM [dbo].[products] p
+--    LEFT JOIN [dbo].[categories] c 
+--        ON c.[id] = p.[category_id];
+--END
+--GO
+
+---- =============================================
+--CREATE PROCEDURE ObtenerProducto
+--    @Id AS uniqueidentifier
+--AS
+--BEGIN
+--    SET NOCOUNT ON;
+
+--    SELECT
+--        p.[id],
+--        p.[name],
+--        p.[description],
+--        p.[price],
+--        p.[stock_quantity],
+--        p.[category_id],
+--        p.[image_url],
+--        p.[is_active],
+--        p.[created_at],
+--        c.[name] AS Categoria
+--    FROM [dbo].[products] p
+--    LEFT JOIN [dbo].[categories] c 
+--        ON c.[id] = p.[category_id]
+--    WHERE p.[id] = @Id;
+--END
+--GO
+
+---- =============================================

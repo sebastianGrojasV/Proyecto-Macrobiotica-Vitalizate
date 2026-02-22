@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { obtenerCategorias, CategoriaDto } from "@/api/categorias.service";
+import { obtenerProductos, ProductoDto } from "@/api/productos.service";
 import { Package, Search, Plus, Edit, Trash2, AlertTriangle, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,12 +22,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import AdminLayout from '@/layouts/AdminLayout';
-import { mockProducts } from '@/data/products';
 import { INVENTORY_STATUS, formatCurrency } from '@/lib/constants';
 
 export default function Inventory() {
   const [categorias, setCategorias] = useState<CategoriaDto[]>([]);
   const [cargandoCategorias, setCargandoCategorias] = useState(true);
+
+  const [productos, setProductos] = useState<ProductoDto[]>([]);
+  const [cargandoProductos, setCargandoProductos] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -43,6 +46,21 @@ export default function Inventory() {
     })();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        setCargandoProductos(true);
+        const data = await obtenerProductos();
+        setProductos(data);
+      } catch (e) {
+        console.error("Error cargando productos:", e);
+        setProductos([]);
+      } finally {
+        setCargandoProductos(false);
+      }
+    })();
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -53,7 +71,18 @@ export default function Inventory() {
     return 'in_stock';
   };
 
-  const filteredProducts = mockProducts.filter((product) => {
+  const productosUI = productos.map((p) => ({
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    price: p.price,
+    stock: p.stock_quantity,          // <-- adapter
+    image: p.image_url ?? "",         // <-- adapter (evita undefined)
+    category: (p as any).categoria ?? (p as any).Categoria ?? "", // <-- adapter
+    is_active: p.is_active,
+  }));
+
+  const filteredProducts = productosUI.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
     const stockStatus = getStockStatus(product.stock);
@@ -170,7 +199,7 @@ export default function Inventory() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas las categorías</SelectItem>
-                  
+
                   {cargandoCategorias ? (
                     <SelectItem value="loading" disabled>
                       Cargando...
@@ -182,7 +211,7 @@ export default function Inventory() {
                       </SelectItem>
                     ))
                   )}
-                  
+
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -219,53 +248,72 @@ export default function Inventory() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.map((product) => {
-                  const stockStatus = getStockStatus(product.stock);
-                  return (
-                    <TableRow key={product.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="w-10 h-10 rounded-lg object-cover"
-                          />
-                          <div>
-                            <p className="font-medium text-gray-900">{product.name}</p>
-                            <p className="text-sm text-gray-600">ID: {product.id}</p>
+                {cargandoProductos ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                      Cargando productos...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredProducts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                      No hay productos para mostrar.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredProducts.map((product) => {
+                    const stockStatus = getStockStatus(product.stock);
+                    return (
+                      <TableRow key={product.id}>
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <img
+                              src={product.image || "/images/imagePlaceholder.png"}
+                              alt={product.name}
+                              className="w-10 h-10 rounded-lg object-cover"
+                            />
+                            <div>
+                              <p className="font-medium text-gray-900">{product.name}</p>
+                              <p className="text-sm text-gray-600">ID: {product.id}</p>
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{product.category}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-semibold">{product.stock}</span> unidades
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={INVENTORY_STATUS[stockStatus].color}>
-                          {INVENTORY_STATUS[stockStatus].label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-semibold">
-                        {formatCurrency(product.price)}
-                      </TableCell>
-                      <TableCell className="font-semibold text-primary">
-                        {formatCurrency(product.price * product.stock)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end space-x-2">
-                          <Button variant="ghost" size="icon">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{product.category}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-semibold">{product.stock}</span> unidades
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={INVENTORY_STATUS[stockStatus].color}>
+                            {INVENTORY_STATUS[stockStatus].label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-semibold">
+                          {formatCurrency(product.price)}
+                        </TableCell>
+                        <TableCell className="font-semibold text-primary">
+                          {formatCurrency(product.price * product.stock)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="ghost" size="icon">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+
+
+
+
+
               </TableBody>
             </Table>
           </CardContent>

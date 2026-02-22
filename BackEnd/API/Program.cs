@@ -24,7 +24,9 @@ builder.Services.AddCors(options => {
 
 // Inyección de dependencias
 builder.Services.AddScoped<ICategoriaFlujo, CategoriaFlujo>();
+builder.Services.AddScoped<IProductoFlujo, ProductoFlujo>();
 builder.Services.AddScoped<ICategoriaDA, CategoriaDA>();
+builder.Services.AddScoped<IProductoDA, ProductoDA>();
 builder.Services.AddScoped<IRepositorioDapper, RepositorioDapper>();
 
 
