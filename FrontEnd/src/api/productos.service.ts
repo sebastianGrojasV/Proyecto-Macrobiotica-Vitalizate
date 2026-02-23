@@ -1,6 +1,5 @@
 import { api } from "./api";
 
-// Métodos GET
 export type ProductoDto = {
   id: string;
   name: string;
@@ -12,6 +11,7 @@ export type ProductoDto = {
   Categoria: string; // viene en ProductoResponse
 };
 
+// Métodos GET
 export async function obtenerProductos(): Promise<ProductoDto[]> {
   const res = await api.get("/api/Producto", { validateStatus: () => true });
 
