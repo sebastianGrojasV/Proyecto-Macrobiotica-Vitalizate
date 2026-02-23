@@ -925,10 +925,10 @@ export default function Inventory() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
-                            <Button variant="ghost" size="icon" onClick={() => abrirHistorial(product)}>
+                            <Button variant="ghost" size="icon" className="text-blue-500 hover:text-blue-700 hover:bg-blue-50" onClick={() => abrirHistorial(product)}>
                               <History className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => abrirEditar(product)}>
+                            <Button variant="ghost" size="icon" className="text-gray-700 hover:text-gray-900 hover:bg-gray-200/60" onClick={() => abrirEditar(product)}>
                               <Edit className="w-4 h-4" />
                             </Button>
                             <AlertDialog>
@@ -939,7 +939,7 @@ export default function Inventory() {
                                   disabled={!product.is_active}
                                   className={
                                     product.is_active
-                                      ? "text-red-500 hover:text-red-700"
+                                      ? "text-red-500 hover:text-red-700 hover:bg-red-50"
                                       : "text-gray-400 cursor-not-allowed"
                                   }
                                 >
