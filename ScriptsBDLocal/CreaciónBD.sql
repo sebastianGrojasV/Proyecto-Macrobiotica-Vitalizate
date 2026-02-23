@@ -298,3 +298,29 @@ BEGIN
     );
 END
 GO
+
+-- PRODUCT_AUDIT
+CREATE TABLE [dbo].[product_audit]
+(
+    [id] UNIQUEIDENTIFIER NOT NULL,
+    [product_id] UNIQUEIDENTIFIER NOT NULL,
+    [action] NVARCHAR(50) NOT NULL,
+    [description] NVARCHAR(MAX) NULL,
+    [old_values] NVARCHAR(MAX) NULL,
+    [new_values] NVARCHAR(MAX) NULL,
+    [created_at] DATETIMEOFFSET(7) NOT NULL,
+
+    CONSTRAINT [PK_product_audit] PRIMARY KEY ([id]),
+    CONSTRAINT [FK_product_audit_products]
+        FOREIGN KEY ([product_id]) REFERENCES [dbo].[products]([id])
+);
+GO
+
+ALTER TABLE [dbo].[product_audit]
+ADD CONSTRAINT [DF_product_audit_created_at]
+DEFAULT (SYSDATETIMEOFFSET()) FOR [created_at];
+GO
+
+CREATE INDEX [IX_product_audit_product_date]
+ON [dbo].[product_audit] ([product_id], [created_at] DESC);
+GO

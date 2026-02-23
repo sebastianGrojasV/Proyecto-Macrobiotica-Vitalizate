@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { obtenerCategorias, CategoriaDto } from "@/api/categorias.service";
 import { obtenerProductos, ProductoDto, agregarProducto, eliminarProducto, editarProducto } from "@/api/productos.service";
+import { obtenerHistorialProducto, HistorialProductoDto } from "@/api/historialProducto.service";
+import { History } from "lucide-react";
 import { Package, Search, Plus, Edit, Trash2, AlertTriangle, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +10,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +52,90 @@ import {
 import AdminLayout from '@/layouts/AdminLayout';
 import { INVENTORY_STATUS, formatCurrency } from '@/lib/constants';
 
+// -------- Para parseo JSON --------
+type JsonRecord = Record<string, any>;
+
+const safeParseJson = (value: string | null | undefined): any => {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value; // si no es JSON válido, devolvemos el string original
+  }
+};
+
+const formatValue = (v: any) => {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "string") return v.trim() === "" ? "—" : v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  // objetos/arrays:
+  try {
+    return JSON.stringify(v, null, 2);
+  } catch {
+    return String(v);
+  }
+};
+
+// Une llaves de old/new y crea filas de diff
+const buildDiffRows = (oldObj: any, newObj: any) => {
+  // si cualquiera no es objeto (por ejemplo string), tratamos como “raw”
+  const oldIsObject = oldObj && typeof oldObj === "object" && !Array.isArray(oldObj);
+  const newIsObject = newObj && typeof newObj === "object" && !Array.isArray(newObj);
+
+  if (!oldIsObject && !newIsObject) {
+    // no hay estructura por campos, se muestra como raw
+    return null as null | Array<{ key: string; oldV: any; newV: any; changed: boolean }>;
+  }
+
+  const keys = new Set<string>([
+    ...Object.keys((oldIsObject ? oldObj : {}) as JsonRecord),
+    ...Object.keys((newIsObject ? newObj : {}) as JsonRecord),
+  ]);
+
+  const rows = Array.from(keys)
+    .sort((a, b) => a.localeCompare(b))
+    .map((key) => {
+      const oldV = oldIsObject ? oldObj[key] : undefined;
+      const newV = newIsObject ? newObj[key] : undefined;
+
+      // comparación “simple”:
+      const changed =
+        JSON.stringify(oldV) !== JSON.stringify(newV);
+
+      return { key, oldV, newV, changed };
+    });
+
+  return rows;
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  name: "Nombre",
+  description: "Descripción",
+  price: "Precio",
+  stock_quantity: "Stock",
+  image_url: "Imagen (URL)",
+  is_active: "Estado",
+  category_id: "Categoría",
+  Categoria: "Categoría",
+  categoria: "Categoría",
+};
+
+const prettyFieldName = (key: string) => {
+  // 1) si está en el diccionario, usarlo
+  if (FIELD_LABELS[key]) return FIELD_LABELS[key];
+
+  // 2) fallback: convertir snake_case / camelCase a "Title Case"
+  //    stock_quantity -> Stock quantity
+  //    createdAt -> Created At
+  const withSpaces = key
+    .replace(/_/g, " ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+
+  // Title Case sencillo
+  return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
+};
+// ----------------------------------
+
 export default function Inventory() {
   const [categorias, setCategorias] = useState<CategoriaDto[]>([]);
   const [cargandoCategorias, setCargandoCategorias] = useState(true);
@@ -54,6 +146,11 @@ export default function Inventory() {
   const [openNuevo, setOpenNuevo] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
+
+  const [openHistorial, setOpenHistorial] = useState(false);
+  const [productoHistorial, setProductoHistorial] = useState<any | null>(null); // usamos el adapter product UI
+  const [cargandoHistorial, setCargandoHistorial] = useState(false);
+  const [historialProducto, setHistorialProducto] = useState<HistorialProductoDto[]>([]);
 
   const [nuevoProducto, setNuevoProducto] = useState({
     name: "",
@@ -251,6 +348,61 @@ export default function Inventory() {
         description: "No se pudo eliminar el producto.",
       });
     }
+  };
+
+  const abrirHistorial = async (product: any) => {
+    try {
+      setProductoHistorial(product);
+      setOpenHistorial(true);
+      setCargandoHistorial(true);
+
+      const data = await obtenerHistorialProducto(product.id);
+      setHistorialProducto(data);
+    } catch (e) {
+      console.error("Error cargando historial:", e);
+      setHistorialProducto([]);
+      toast.error("Error cargando historial", {
+        description: "No se pudo cargar el historial del producto.",
+      });
+    } finally {
+      setCargandoHistorial(false);
+    }
+  };
+
+  const cerrarHistorial = () => {
+    setOpenHistorial(false);
+    setProductoHistorial(null);
+    setHistorialProducto([]);
+    setCargandoHistorial(false);
+  };
+
+  // Nombre de categoría para el Historial
+  const normalizeGuid = (v: string) => v.trim().replace(/[{}]/g, "").toLowerCase();
+
+  const getCategoryNameById = (id: string | null | undefined) => {
+    if (!id) return "—";
+
+    const needle = normalizeGuid(String(id));
+
+    const cat = categorias.find((c) => normalizeGuid(c.id) === needle);
+    return cat ? cat.name : id; // fallback al id si no lo encuentra
+  };
+
+  const formatValueByKey = (key: string, value: any) => {
+    if (value === null || value === undefined) return "—";
+
+    // ✅ category_id => mostrar nombre
+    if (key === "category_id") {
+      return getCategoryNameById(String(value));
+    }
+
+    // ✅ is_active => mostrar Activo/Inactivo
+    if (key === "is_active") {
+      return Boolean(value) ? "Activo" : "Inactivo";
+    }
+
+    // fallback a tu formatValue actual
+    return formatValue(value);
   };
 
   useEffect(() => {
@@ -658,6 +810,9 @@ export default function Inventory() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
+                            <Button variant="ghost" size="icon" onClick={() => abrirHistorial(product)}>
+                              <History className="w-4 h-4" />
+                            </Button>
                             <Button variant="ghost" size="icon" onClick={() => abrirEditar(product)}>
                               <Edit className="w-4 h-4" />
                             </Button>
@@ -703,6 +858,217 @@ export default function Inventory() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Para el Historial */}
+      <Dialog
+        open={openHistorial}
+        onOpenChange={(v) => {
+          if (!v) cerrarHistorial();
+          else setOpenHistorial(true);
+        }}
+      >
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="w-5 h-5 text-primary" />
+              Historial del Producto
+            </DialogTitle>
+          </DialogHeader>
+
+          {!productoHistorial ? (
+            <div className="text-gray-500">No hay producto seleccionado.</div>
+          ) : (
+            <div className="space-y-4">
+              {/* Detalle actual */}
+              <Card className="shadow-natural">
+                <CardHeader>
+                  <CardTitle>Detalle actual</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-start gap-4">
+                    <img
+                      src={productoHistorial.image || "/images/imagePlaceholder.png"}
+                      alt={productoHistorial.name}
+                      className="w-20 h-20 rounded-xl object-cover border"
+                    />
+
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-xl font-bold text-gray-900">{productoHistorial.name}</p>
+                          <p className="text-sm text-gray-600">ID: {productoHistorial.id}</p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{productoHistorial.category}</Badge>
+                          <Badge
+                            className={
+                              productoHistorial.is_active
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-200 text-gray-600"
+                            }
+                          >
+                            {productoHistorial.is_active ? "Activo" : "Inactivo"}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="border rounded-lg p-4 md:col-span-3">
+                          <p className="text-sm font-medium text-gray-600 mb-2">
+                            Descripción
+                          </p>
+                          <div className="max-h-40 overflow-y-auto pr-2">
+                            <p className="text-base text-gray-900 whitespace-pre-wrap">
+                              {productoHistorial.description}
+                            </p>
+                          </div>
+                        </div>
+
+
+                        <div className="border rounded-lg p-3">
+                          <p className="text-xs text-gray-500">Precio</p>
+                          <p className="text-md font-semibold text-gray-900 mt-1">
+                            {formatCurrency(productoHistorial.price)}
+                          </p>
+                        </div>
+                        <div className="border rounded-lg p-3">
+                          <p className="text-xs text-gray-500">Stock</p>
+                          <p className="text-md font-semibold text-gray-900 mt-1">
+                            {productoHistorial.stock} unidades
+                          </p>
+                        </div>
+                        <div className="border rounded-lg p-3">
+                          <p className="text-xs text-gray-500">Cambios Registrados</p>
+                          <p className="text-md font-bold text-primary mt-1">
+                            {historialProducto.length}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tabla historial */}
+              <Card className="shadow-natural">
+                <CardHeader>
+                  <CardTitle>Historial de cambios</CardTitle>
+                </CardHeader>
+
+                <CardContent>
+                  {cargandoHistorial ? (
+                    <div className="text-center text-gray-500 py-8">Cargando historial...</div>
+                  ) : historialProducto.length === 0 ? (
+                    <div className="text-center text-gray-500 py-8">
+                      No hay cambios registrados para este producto.
+                    </div>
+                  ) : (
+                    <Accordion type="single" collapsible className="w-full">
+                      {historialProducto.map((h) => {
+                        const oldParsed = safeParseJson(h.old_values);
+                        const newParsed = safeParseJson(h.new_values);
+
+                        const diffRows = buildDiffRows(oldParsed, newParsed);
+
+                        const changedCount =
+                          diffRows?.filter((r) => r.changed).length ?? 0;
+
+                        const isRaw = diffRows === null;
+
+                        return (
+                          <AccordionItem key={h.id} value={h.id} className="border rounded-lg mb-3 px-3">
+                            <AccordionTrigger className="hover:no-underline">
+                              <div className="flex w-full items-center justify-between gap-4 py-2">
+                                <div className="text-left">
+                                  <div className="flex items-center gap-4 flex-wrap">
+                                    {isRaw ? (
+                                      <Badge className="bg-gray-200 text-gray-700">RAW</Badge>
+                                    ) : (
+                                      <Badge className="bg-primary/10 text-primary">
+                                        {changedCount} datos cambiados
+                                      </Badge>
+                                    )}
+
+                                    <Badge variant="outline">{h.action}</Badge>
+
+                                    <span className="text-sm text-gray-600">
+                                      {new Date(h.created_at).toLocaleString()}
+                                    </span>
+
+                                  </div>
+
+                                  <p className="text-md font-semibold mt-2 ms-1">
+                                    {h.description}
+                                  </p>
+                                </div>
+                              </div>
+                            </AccordionTrigger>
+
+                            <AccordionContent className="pb-4">
+                              {/* Si no hay JSON por campos, mostramos raw */}
+                              {isRaw ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  <div className="border rounded-lg p-3">
+                                    <p className="text-xs text-gray-500 mb-2">Antes</p>
+                                    <pre className="text-xs whitespace-pre-wrap break-words max-h-64 overflow-y-auto pr-2">
+                                      {formatValue(oldParsed)}
+                                    </pre>
+                                  </div>
+                                  <div className="border rounded-lg p-3">
+                                    <p className="text-xs text-gray-500 mb-2">Después</p>
+                                    <pre className="text-xs whitespace-pre-wrap break-words max-h-64 overflow-y-auto pr-2">
+                                      {formatValue(newParsed)}
+                                    </pre>
+                                  </div>
+                                </div>
+                              ) : (
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="w-48">Atributo</TableHead>
+                                      <TableHead>Antes</TableHead>
+                                      <TableHead>Después</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+
+                                  <TableBody>
+                                    {diffRows!
+                                      .filter((r) => r.changed) // 👈 mostramos solo los cambios
+                                      .map((r) => (
+                                        <TableRow key={r.key}>
+                                          <TableCell className="font-medium">
+                                            {prettyFieldName(r.key)}
+                                          </TableCell>
+
+                                          <TableCell>
+                                            <pre className="whitespace-pre-wrap break-words max-h-40 overflow-y-auto pr-2">
+                                              {formatValueByKey(r.key, r.oldV)}
+                                            </pre>
+                                          </TableCell>
+
+                                          <TableCell>
+                                            <pre className="whitespace-pre-wrap break-words max-h-40 overflow-y-auto pr-2">
+                                              {formatValueByKey(r.key, r.newV)}
+                                            </pre>
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                  </TableBody>
+                                </Table>
+                              )}
+                            </AccordionContent>
+                          </AccordionItem>
+                        );
+                      })}
+                    </Accordion>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }
