@@ -1,3 +1,4 @@
+//#region Imports
 import { useEffect, useState } from "react";
 import { obtenerCategorias, CategoriaDto } from "@/api/categorias.service";
 import { obtenerProductos, ProductoDto, agregarProducto, eliminarProducto, editarProducto } from "@/api/productos.service";
@@ -7,6 +8,7 @@ import { Package, Search, Plus, Edit, Trash2, AlertTriangle, Download } from 'lu
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from '@/components/ui/badge';
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -51,8 +53,9 @@ import {
 } from '@/components/ui/select';
 import AdminLayout from '@/layouts/AdminLayout';
 import { INVENTORY_STATUS, formatCurrency } from '@/lib/constants';
+//#endregion
 
-// -------- Para parseo JSON --------
+//#region Parseo JSON
 type JsonRecord = Record<string, any>;
 
 const safeParseJson = (value: string | null | undefined): any => {
@@ -134,7 +137,7 @@ const prettyFieldName = (key: string) => {
   // Title Case sencillo
   return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
 };
-// ----------------------------------
+//#endregion
 
 export default function Inventory() {
   const [categorias, setCategorias] = useState<CategoriaDto[]>([]);
@@ -146,6 +149,8 @@ export default function Inventory() {
   const [openNuevo, setOpenNuevo] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
+
+  const [stockOriginalEdicion, setStockOriginalEdicion] = useState<number | null>(null);
 
   const [openHistorial, setOpenHistorial] = useState(false);
   const [productoHistorial, setProductoHistorial] = useState<any | null>(null); // usamos el adapter product UI
@@ -255,6 +260,7 @@ export default function Inventory() {
   };
 
   const abrirEditar = (product: any) => {
+    setStockOriginalEdicion(product.stock);
     setEditandoId(product.id);
     setNuevoProducto({
       name: product.name,
@@ -267,6 +273,64 @@ export default function Inventory() {
     });
     setOpenNuevo(true);
   };
+
+  const getStockStatus = (stock: number) => {
+    if (stock === 0) return 'out_of_stock';
+    if (stock < 20) return 'low_stock';
+    return 'in_stock';
+  };
+
+  const stockSeverity = (status: string) => {
+    if (status === "out_of_stock") return 2;
+    if (status === "low_stock") return 1;
+    return 0; // in_stock
+  };
+
+  //#region Stock Alert
+  type StockAlert = null | { type: "low"; qty: number } | { type: "out" };
+
+  const showStockToast = (nombre: string, alert: StockAlert) => {
+    if (!alert) return;
+
+    const isOut = alert.type === "out";
+    const title = isOut ? "Producto agotado" : "Stock bajo";
+    const desc = isOut
+      ? `El producto "${nombre}" se agotó (0 unidades).`
+      : `El producto "${nombre}" está bajo en stock (${alert.qty} unidades).`;
+
+    toast.custom(
+      () => (
+        <div
+          className={[
+            "w-full max-w-sm rounded-lg border p-4 shadow-lg",
+            "flex gap-3 items-start",
+            isOut
+              ? "border-red-300 bg-red-50 text-red-900"
+              : "border-yellow-300 bg-yellow-50 text-yellow-900",
+          ].join(" ")}
+        >
+          <div
+            className={[
+              "mt-0.5 rounded-full p-2",
+              isOut ? "bg-red-100" : "bg-yellow-100",
+            ].join(" ")}
+          >
+            <AlertTriangle className={["h-5 w-5", isOut ? "text-red-700" : "text-yellow-700"].join(" ")} />
+          </div>
+
+          <div className="flex-1">
+            <p className="font-semibold leading-5">{title}</p>
+            <p className="text-sm opacity-90 mt-1 whitespace-pre-wrap">{desc}</p>
+          </div>
+        </div>
+      ),
+      {
+        duration: 8000
+      }
+    );
+  };
+  //#endregion
+
 
   const handleEditarProducto = async () => {
     if (!editandoId) return;
@@ -306,14 +370,42 @@ export default function Inventory() {
         category_id: nuevoProducto.category_id,
       });
 
+      // Detectamos si hay alerta (pero la mostramos DESPUÉS, para que quede de última y destaque)
+      let stockAlert: StockAlert = null;
+
+      if (stockOriginalEdicion !== null) {
+        const oldStatus = getStockStatus(stockOriginalEdicion);
+        const newStatus = getStockStatus(Number(nuevoProducto.stock_quantity));
+
+        const oldRank = stockSeverity(oldStatus);
+        const newRank = stockSeverity(newStatus);
+
+        // Solo si empeoró el estado (in_stock->low/out o low->out)
+        if (newRank > oldRank) {
+          if (newStatus === "out_of_stock") {
+            stockAlert = { type: "out" };
+          } else if (newStatus === "low_stock") {
+            stockAlert = { type: "low", qty: Number(nuevoProducto.stock_quantity) };
+          }
+        }
+      }
+
       await recargarProductos();
 
-      toast.success("Producto actualizado", {
+      toast.message("Producto actualizado", {
         description: `Se actualizaron los datos de "${nuevoProducto.name}".`,
+        duration: 5000,
       });
+
+      if (stockAlert) {
+        setTimeout(() => {
+          showStockToast(nuevoProducto.name, stockAlert);
+        }, 120);
+      }
 
       setOpenNuevo(false);
       setEditandoId(null);
+      setStockOriginalEdicion(null);
 
       // limpiar form
       setNuevoProducto({
@@ -427,12 +519,8 @@ export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
-  const getStockStatus = (stock: number) => {
-    if (stock === 0) return 'out_of_stock';
-    if (stock < 20) return 'low_stock';
-    return 'in_stock';
-  };
 
   const productosUI = productos.map((p) => ({
     id: p.id,
@@ -448,9 +536,16 @@ export default function Inventory() {
   const filteredProducts = productosUI.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
+
     const stockStatus = getStockStatus(product.stock);
     const matchesStatus = statusFilter === 'all' || stockStatus === statusFilter;
-    return matchesSearch && matchesCategory && matchesStatus;
+
+    const matchesActive =
+      activeFilter === 'all' ||
+      (activeFilter === 'active' && product.is_active) ||
+      (activeFilter === 'inactive' && !product.is_active);
+
+    return matchesSearch && matchesCategory && matchesStatus && matchesActive;
   });
 
   const totalValue = filteredProducts.reduce((sum, p) => sum + (p.price * p.stock), 0);
@@ -482,6 +577,7 @@ export default function Inventory() {
                   className="bg-primary hover:bg-forest"
                   onClick={() => {
                     setEditandoId(null);
+                    setStockOriginalEdicion(null);
                     setNuevoProducto({
                       name: "",
                       description: "",
@@ -514,10 +610,18 @@ export default function Inventory() {
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Descripción</label>
-                    <Input
+
+                    <Textarea
                       value={nuevoProducto.description}
-                      onChange={(e) => setNuevoProducto({ ...nuevoProducto, description: e.target.value })}
+                      onChange={(e) =>
+                        setNuevoProducto({ ...nuevoProducto, description: e.target.value })
+                      }
+                      className="min-h-32 max-h-60 resize-y overflow-y-auto whitespace-pre-wrap"
                     />
+
+                    <p className="text-xs text-gray-500">
+                      Tip: puedes usar Enter para saltos de línea y pegar listas.
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -596,6 +700,7 @@ export default function Inventory() {
                       onClick={() => {
                         setOpenNuevo(false);
                         setEditandoId(null);
+                        setStockOriginalEdicion(null);
                       }}
                     >
                       Cancelar
@@ -679,7 +784,7 @@ export default function Inventory() {
         {/* Filters */}
         <Card className="shadow-natural">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="md:col-span-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -714,13 +819,24 @@ export default function Inventory() {
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Estado" />
+                  <SelectValue placeholder="EstadoStock" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los estados</SelectItem>
+                  <SelectItem value="all">Todos los stock</SelectItem>
                   <SelectItem value="in_stock">En Stock</SelectItem>
                   <SelectItem value="low_stock">Stock Bajo</SelectItem>
                   <SelectItem value="out_of_stock">Agotado</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={activeFilter} onValueChange={(v) => setActiveFilter(v as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="EstadoProducto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los estados</SelectItem>
+                  <SelectItem value="active">Activos</SelectItem>
+                  <SelectItem value="inactive">Inactivos</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -765,9 +881,8 @@ export default function Inventory() {
                     return (
                       <TableRow
                         key={product.id}
-                        className={!product.is_active ? "opacity-50" : ""}
                       >
-                        <TableCell>
+                        <TableCell className={!product.is_active ? "opacity-50" : ""}>
                           <div className="flex items-center space-x-3">
                             <img
                               src={product.image || "/images/imagePlaceholder.png"}
@@ -780,24 +895,24 @@ export default function Inventory() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className={!product.is_active ? "opacity-50" : ""}>
                           <Badge variant="outline">{product.category}</Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className={!product.is_active ? "opacity-50" : ""}>
                           <span className="font-semibold">{product.stock}</span> unidades
                         </TableCell>
-                        <TableCell>
+                        <TableCell className={!product.is_active ? "opacity-50" : ""}>
                           <Badge className={INVENTORY_STATUS[stockStatus].color}>
                             {INVENTORY_STATUS[stockStatus].label}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-semibold">
-                          {formatCurrency(product.price)}
+                        <TableCell className={!product.is_active ? "opacity-50" : ""}>
+                          <span className="font-semibold">{formatCurrency(product.price)}</span>
                         </TableCell>
-                        <TableCell className="font-semibold text-primary">
-                          {formatCurrency(product.price * product.stock)}
+                        <TableCell className={!product.is_active ? "opacity-50" : ""}>
+                          <span className="font-semibold text-primary">{formatCurrency(product.price * product.stock)}</span>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className={!product.is_active ? "opacity-50" : ""}>
                           <Badge
                             className={
                               product.is_active
@@ -821,7 +936,12 @@ export default function Inventory() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="text-red-500 hover:text-red-700"
+                                  disabled={!product.is_active}
+                                  className={
+                                    product.is_active
+                                      ? "text-red-500 hover:text-red-700"
+                                      : "text-gray-400 cursor-not-allowed"
+                                  }
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
@@ -831,8 +951,7 @@ export default function Inventory() {
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Esta acción eliminará "{product.name}" permanentemente.
-                                    No se puede deshacer.
+                                    Esta acción eliminará (inactivará) el producto "{product.name}".
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
 
