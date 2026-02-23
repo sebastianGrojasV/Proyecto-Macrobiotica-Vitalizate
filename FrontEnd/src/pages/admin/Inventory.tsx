@@ -1,10 +1,31 @@
 import { useEffect, useState } from "react";
 import { obtenerCategorias, CategoriaDto } from "@/api/categorias.service";
+import { obtenerProductos, ProductoDto, agregarProducto, eliminarProducto, editarProducto } from "@/api/productos.service";
 import { Package, Search, Plus, Edit, Trash2, AlertTriangle, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -21,12 +42,216 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import AdminLayout from '@/layouts/AdminLayout';
-import { mockProducts } from '@/data/products';
 import { INVENTORY_STATUS, formatCurrency } from '@/lib/constants';
 
 export default function Inventory() {
   const [categorias, setCategorias] = useState<CategoriaDto[]>([]);
   const [cargandoCategorias, setCargandoCategorias] = useState(true);
+
+  const [productos, setProductos] = useState<ProductoDto[]>([]);
+  const [cargandoProductos, setCargandoProductos] = useState(true);
+
+  const [openNuevo, setOpenNuevo] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+
+  const [nuevoProducto, setNuevoProducto] = useState({
+    name: "",
+    description: "",
+    price: 0,
+    stock_quantity: 0,
+    image_url: "",
+    is_active: true,
+    category_id: "",
+  });
+
+  const recargarProductos = async () => {
+    try {
+      setCargandoProductos(true);
+      const data = await obtenerProductos();
+      setProductos(data);
+    } catch (e) {
+      console.error("Error recargando productos:", e);
+      setProductos([]);
+    } finally {
+      setCargandoProductos(false);
+    }
+  };
+
+  const handleGuardarProducto = async () => {
+    if (!nuevoProducto.name.trim()) {
+      toast.error("Falta el nombre", {
+        description: "Por favor ingresa el nombre del producto.",
+      });
+      return;
+    }
+
+    if (!nuevoProducto.description.trim()) {
+      toast.error("Falta la descripción", {
+        description: "Por favor ingresa la descripción del producto.",
+      });
+      return;
+    }
+
+    if (!nuevoProducto.category_id) {
+      toast.error("Falta la categoría", {
+        description: "Selecciona una categoría para el producto.",
+      });
+      return;
+    }
+
+    if (nuevoProducto.price <= 0) {
+      toast.error("Precio inválido", {
+        description: "El precio debe ser mayor a 0.",
+      });
+      return;
+    }
+
+    if (nuevoProducto.stock_quantity < 0) {
+      toast.error("Stock inválido", {
+        description: "El stock no puede ser negativo.",
+      });
+      return;
+    }
+
+    try {
+      setGuardando(true);
+
+      await agregarProducto({
+        name: nuevoProducto.name,
+        description: nuevoProducto.description,
+        price: Number(nuevoProducto.price),
+        stock_quantity: Number(nuevoProducto.stock_quantity),
+        image_url: nuevoProducto.image_url || null,
+        is_active: nuevoProducto.is_active,
+        category_id: nuevoProducto.category_id,
+      });
+
+      // refrescar lista
+      await recargarProductos();
+
+      toast.success("Producto agregado", {
+        description: `El producto "${nuevoProducto.name}" se agregó correctamente.`,
+      });
+
+      // cerrar modal
+      setOpenNuevo(false);
+
+      // limpiar form
+      setNuevoProducto({
+        name: "",
+        description: "",
+        price: 0,
+        stock_quantity: 0,
+        image_url: "",
+        is_active: true,
+        category_id: "",
+      });
+    } catch (e) {
+      console.error("Error agregando producto:", e);
+      toast.error("Error al agregar", {
+        description: "No se pudo agregar el producto. Revisa consola / backend.",
+      });
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const abrirEditar = (product: any) => {
+    setEditandoId(product.id);
+    setNuevoProducto({
+      name: product.name,
+      description: product.description,
+      price: Number(product.price),
+      stock_quantity: Number(product.stock),
+      image_url: product.image ?? "",
+      is_active: product.is_active,
+      category_id: categorias.find((c) => c.name === product.category)?.id ?? "",
+    });
+    setOpenNuevo(true);
+  };
+
+  const handleEditarProducto = async () => {
+    if (!editandoId) return;
+
+    // Validaciones mínimas (igual que agregar)
+    if (!nuevoProducto.name.trim()) {
+      toast.error("Falta el nombre", { description: "Por favor ingresa el nombre del producto." });
+      return;
+    }
+    if (!nuevoProducto.description.trim()) {
+      toast.error("Falta la descripción", { description: "Por favor ingresa la descripción del producto." });
+      return;
+    }
+    if (!nuevoProducto.category_id) {
+      toast.error("Falta la categoría", { description: "Selecciona una categoría para el producto." });
+      return;
+    }
+    if (nuevoProducto.price <= 0) {
+      toast.error("Precio inválido", { description: "El precio debe ser mayor a 0." });
+      return;
+    }
+    if (nuevoProducto.stock_quantity < 0) {
+      toast.error("Stock inválido", { description: "El stock no puede ser negativo." });
+      return;
+    }
+
+    try {
+      setGuardando(true);
+
+      await editarProducto(editandoId, {
+        name: nuevoProducto.name,
+        description: nuevoProducto.description,
+        price: Number(nuevoProducto.price),
+        stock_quantity: Number(nuevoProducto.stock_quantity),
+        image_url: nuevoProducto.image_url || null,
+        is_active: nuevoProducto.is_active,
+        category_id: nuevoProducto.category_id,
+      });
+
+      await recargarProductos();
+
+      toast.success("Producto actualizado", {
+        description: `Se actualizaron los datos de "${nuevoProducto.name}".`,
+      });
+
+      setOpenNuevo(false);
+      setEditandoId(null);
+
+      // limpiar form
+      setNuevoProducto({
+        name: "",
+        description: "",
+        price: 0,
+        stock_quantity: 0,
+        image_url: "",
+        is_active: true,
+        category_id: "",
+      });
+    } catch (e) {
+      console.error("Error editando producto:", e);
+      toast.error("Error al editar", { description: "No se pudo actualizar el producto." });
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const handleEliminarProducto = async (id: string, nombre: string) => {
+    try {
+      await eliminarProducto(id);
+      await recargarProductos();
+
+      toast.success("Producto eliminado", {
+        description: `Se eliminó "${nombre}" correctamente.`,
+      });
+    } catch (e) {
+      console.error("Error eliminando producto:", e);
+
+      toast.error("Error al eliminar", {
+        description: "No se pudo eliminar el producto.",
+      });
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -43,6 +268,10 @@ export default function Inventory() {
     })();
   }, []);
 
+  useEffect(() => {
+    recargarProductos();
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -53,7 +282,18 @@ export default function Inventory() {
     return 'in_stock';
   };
 
-  const filteredProducts = mockProducts.filter((product) => {
+  const productosUI = productos.map((p) => ({
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    price: p.price,
+    stock: p.stock_quantity,          // <-- adapter
+    image: p.image_url ?? "",         // <-- adapter (evita undefined)
+    category: (p as any).categoria ?? (p as any).Categoria ?? "", // <-- adapter
+    is_active: p.is_active,
+  }));
+
+  const filteredProducts = productosUI.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
     const stockStatus = getStockStatus(product.stock);
@@ -83,10 +323,145 @@ export default function Inventory() {
               <Download className="w-4 h-4 mr-2" />
               Exportar
             </Button>
-            <Button className="bg-primary hover:bg-forest">
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo Producto
-            </Button>
+
+            <Dialog open={openNuevo} onOpenChange={setOpenNuevo}>
+              <DialogTrigger asChild>
+                <Button
+                  className="bg-primary hover:bg-forest"
+                  onClick={() => {
+                    setEditandoId(null);
+                    setNuevoProducto({
+                      name: "",
+                      description: "",
+                      price: 0,
+                      stock_quantity: 0,
+                      image_url: "",
+                      is_active: true,
+                      category_id: "",
+                    });
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nuevo Producto
+                </Button>
+              </DialogTrigger>
+
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>{editandoId ? "Editar Producto" : "Nuevo Producto"}</DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Nombre</label>
+                    <Input
+                      value={nuevoProducto.name}
+                      onChange={(e) => setNuevoProducto({ ...nuevoProducto, name: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Descripción</label>
+                    <Input
+                      value={nuevoProducto.description}
+                      onChange={(e) => setNuevoProducto({ ...nuevoProducto, description: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Precio</label>
+                      <Input
+                        type="number"
+                        value={nuevoProducto.price}
+                        onChange={(e) => setNuevoProducto({ ...nuevoProducto, price: Number(e.target.value) })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Stock</label>
+                      <Input
+                        type="number"
+                        value={nuevoProducto.stock_quantity}
+                        onChange={(e) =>
+                          setNuevoProducto({ ...nuevoProducto, stock_quantity: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Imagen (URL)</label>
+                    <Input
+                      value={nuevoProducto.image_url ?? ""}
+                      onChange={(e) => setNuevoProducto({ ...nuevoProducto, image_url: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Categoría</label>
+                    <Select
+                      value={nuevoProducto.category_id}
+                      onValueChange={(value) => setNuevoProducto({ ...nuevoProducto, category_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona una categoría" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categorias.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {editandoId && (
+                    <div className="flex items-center justify-between border rounded-lg p-3">
+                      <div>
+                        <p className="text-sm font-medium">Estado del producto</p>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm">
+                          {nuevoProducto.is_active ? "Activo" : "Inactivo"}
+                        </span>
+
+                        <Switch
+                          checked={nuevoProducto.is_active}
+                          onCheckedChange={(value: boolean) =>
+                            setNuevoProducto({ ...nuevoProducto, is_active: value })
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end space-x-2 pt-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setOpenNuevo(false);
+                        setEditandoId(null);
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+
+                    <Button
+                      className="bg-primary hover:bg-forest"
+                      onClick={editandoId ? handleEditarProducto : handleGuardarProducto}
+                      disabled={guardando}
+                    >
+                      {guardando ? "Guardando..." : (editandoId ? "Guardar cambios" : "Guardar")}
+                    </Button>
+
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
           </div>
         </div>
 
@@ -170,7 +545,7 @@ export default function Inventory() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas las categorías</SelectItem>
-                  
+
                   {cargandoCategorias ? (
                     <SelectItem value="loading" disabled>
                       Cargando...
@@ -182,7 +557,7 @@ export default function Inventory() {
                       </SelectItem>
                     ))
                   )}
-                  
+
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -211,61 +586,118 @@ export default function Inventory() {
                 <TableRow>
                   <TableHead>Producto</TableHead>
                   <TableHead>Categoría</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Estado</TableHead>
+                  <TableHead>Cantidad Stock</TableHead>
+                  <TableHead>Estado Stock</TableHead>
                   <TableHead>Precio</TableHead>
                   <TableHead>Valor Total</TableHead>
+                  <TableHead>Estado Producto</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.map((product) => {
-                  const stockStatus = getStockStatus(product.stock);
-                  return (
-                    <TableRow key={product.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="w-10 h-10 rounded-lg object-cover"
-                          />
-                          <div>
-                            <p className="font-medium text-gray-900">{product.name}</p>
-                            <p className="text-sm text-gray-600">ID: {product.id}</p>
+                {cargandoProductos ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-gray-500 py-8">
+                      Cargando productos...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredProducts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-gray-500 py-8">
+                      No hay productos para mostrar.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredProducts.map((product) => {
+                    const stockStatus = getStockStatus(product.stock);
+                    return (
+                      <TableRow
+                        key={product.id}
+                        className={!product.is_active ? "opacity-50" : ""}
+                      >
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <img
+                              src={product.image || "/images/imagePlaceholder.png"}
+                              alt={product.name}
+                              className="w-10 h-10 rounded-lg object-cover"
+                            />
+                            <div>
+                              <p className="font-medium text-gray-900">{product.name}</p>
+                              <p className="text-sm text-gray-600">ID: {product.id}</p>
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{product.category}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-semibold">{product.stock}</span> unidades
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={INVENTORY_STATUS[stockStatus].color}>
-                          {INVENTORY_STATUS[stockStatus].label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-semibold">
-                        {formatCurrency(product.price)}
-                      </TableCell>
-                      <TableCell className="font-semibold text-primary">
-                        {formatCurrency(product.price * product.stock)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end space-x-2">
-                          <Button variant="ghost" size="icon">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{product.category}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-semibold">{product.stock}</span> unidades
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={INVENTORY_STATUS[stockStatus].color}>
+                            {INVENTORY_STATUS[stockStatus].label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-semibold">
+                          {formatCurrency(product.price)}
+                        </TableCell>
+                        <TableCell className="font-semibold text-primary">
+                          {formatCurrency(product.price * product.stock)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={
+                              product.is_active
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-200 text-gray-600"
+                            }
+                          >
+                            {product.is_active ? "Activo" : "Inactivo"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="ghost" size="icon" onClick={() => abrirEditar(product)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta acción eliminará "{product.name}" permanentemente.
+                                    No se puede deshacer.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleEliminarProducto(product.id, product.name)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Eliminar
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
           </CardContent>
