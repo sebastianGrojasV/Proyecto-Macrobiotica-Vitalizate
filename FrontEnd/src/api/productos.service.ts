@@ -1,5 +1,6 @@
 import { api } from "./api";
 
+// Métodos GET
 export type ProductoDto = {
   id: string;
   name: string;
@@ -25,4 +26,30 @@ export async function obtenerProductos(): Promise<ProductoDto[]> {
 export async function obtenerProductoPorId(id: string): Promise<ProductoDto> {
   const res = await api.get(`/api/Producto/${id}`);
   return res.data as ProductoDto;
+}
+
+// Método POST
+export type ProductoRequest = {
+  name: string;
+  description: string;
+  price: number;
+  stock_quantity: number;
+  image_url?: string | null;
+  is_active: boolean;
+  category_id: string;
+};
+
+export async function agregarProducto(producto: ProductoRequest) {
+  const res = await api.post("/api/Producto", producto);
+  return res.data; // tu backend devuelve CreatedAtAction con Id
+}
+
+// Método DELETE
+export async function eliminarProducto(id: string): Promise<void> {
+  await api.delete(`/api/Producto/${id}`);
+}
+
+// Método PUT
+export async function editarProducto(id: string, producto: ProductoRequest): Promise<void> {
+  await api.put(`/api/Producto/${id}`, producto);
 }
