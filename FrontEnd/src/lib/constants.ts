@@ -1,14 +1,3 @@
-// Categorías de productos
-export const CATEGORIES = [
-  'Suplementos',
-  'Hierbas Medicinales',
-  'Alimentos Orgánicos',
-  'Tés y Infusiones',
-  'Aceites Esenciales',
-  'Superalimentos',
-  'Vitaminas',
-  'Minerales',
-];
 
 // Estados de pedidos
 export const ORDER_STATUS = {
