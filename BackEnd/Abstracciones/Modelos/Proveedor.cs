@@ -8,11 +8,13 @@ namespace Abstracciones.Modelos
 {
     public class Proveedor
     {
-        string Name { get; set; }
-        string ContactEmail { get; set; }
-        string Phone {  get; set; }
-        string Address { get; set; }
-        DateTime CreatedAt { get; set; }
+        public string Name { get; set; }
+        public string Contact { get; set; }
+        public string Email { get; set; }
+        public string Phone { get; set; }
+        public string Address { get; set; }
+        public decimal Rating { get; set; }
+        public string Status { get; set; } // active | inactive
     }
 
     public class ProveedorRequest : Proveedor 
@@ -21,6 +23,9 @@ namespace Abstracciones.Modelos
 
     public class ProveedorResponse : Proveedor
     {
-        Guid Id { get; set; }
+        public Guid Id { get; set; }
+        public List<string> ProductsSupplied { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
+
     }
 }
