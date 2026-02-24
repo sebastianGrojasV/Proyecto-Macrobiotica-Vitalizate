@@ -2,6 +2,7 @@ using Abstracciones.Interfaces.DataAccess;
 using Abstracciones.Modelos;
 using Microsoft.Data.SqlClient;
 using Dapper;
+using Abstracciones.Interfaces.DA;
 
 namespace DataAccess
 {

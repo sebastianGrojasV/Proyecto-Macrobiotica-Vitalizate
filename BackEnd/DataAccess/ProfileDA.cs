@@ -1,4 +1,5 @@
-﻿using Abstracciones.Interfaces.DataAccess;
+﻿using Abstracciones.Interfaces.DA;
+using Abstracciones.Interfaces.DataAccess;
 using Abstracciones.Modelos;
 using Dapper;
 using Microsoft.Data.SqlClient;
