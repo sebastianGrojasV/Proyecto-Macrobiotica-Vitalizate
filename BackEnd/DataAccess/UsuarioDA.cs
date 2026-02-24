@@ -67,7 +67,7 @@ namespace DataAccess
                     phone = @Phone,
                     rol = @Role,
                     cedula = @Cedula,
-                    password_hash = @PasswordHash
+                    password_hash = @Password
                 OUTPUT INSERTED.id
                 WHERE id = @Id;";
 

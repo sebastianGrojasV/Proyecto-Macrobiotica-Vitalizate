@@ -41,6 +41,10 @@ builder.Services.AddScoped<IProveedorFlujo, ProveedorFlujo>();
 builder.Services.AddScoped<IUsuarioDA, UsuarioDA>();
 builder.Services.AddScoped<IUsuarioFlujo, UsuarioFlujo>();
 
+builder.Services.AddScoped<IProfileDA, ProfileDA>();
+builder.Services.AddScoped<IProfileFlujo, ProfileFlujo>();
+
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
