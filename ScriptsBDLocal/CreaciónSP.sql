@@ -410,3 +410,126 @@ BEGIN
     ORDER BY a.[created_at] DESC;
 END
 GO
+
+-- =============================================
+-- ORDENES
+-- =============================================
+CREATE PROCEDURE AgregarOrden
+    @Id AS uniqueidentifier,
+    @UserId AS uniqueidentifier = NULL,
+    @Status AS nvarchar(30),
+    @TotalAmount AS decimal(18,2),
+    @ShippingAddressId AS uniqueidentifier = NULL,
+    @TrackingNumber AS nvarchar(max) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRANSACTION;
+
+    INSERT INTO [dbo].[orders]
+           ([id],
+            [user_id],
+            [status],
+            [total_amount],
+            [shipping_address_id],
+            [tracking_number])
+    VALUES
+           (@Id,
+            @UserId,
+            @Status,
+            @TotalAmount,
+            @ShippingAddressId,
+            @TrackingNumber);
+
+    -- Retornar solo el Id
+    SELECT @Id;
+
+    COMMIT TRANSACTION;
+END
+GO
+
+-- =============================================
+CREATE PROCEDURE EditarOrden
+    @Id AS uniqueidentifier,
+    @Status AS nvarchar(30),
+    @ShippingAddressId AS uniqueidentifier = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRANSACTION;
+
+    UPDATE [dbo].[orders]
+       SET [status] = @Status,
+           [shipping_address_id] = @ShippingAddressId,
+           [updated_at] = SYSUTCDATETIME()
+     WHERE [id] = @Id;
+
+    -- Retornar solo el Id
+    SELECT @Id;
+
+    COMMIT TRANSACTION;
+END
+GO
+
+-- =============================================
+CREATE PROCEDURE CancelarOrden
+    @Id AS uniqueidentifier
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRANSACTION;
+
+    UPDATE [dbo].[orders]
+       SET [status] = N'cancelled',
+           [updated_at] = SYSUTCDATETIME()
+     WHERE [id] = @Id;
+
+    -- Retornar solo el Id
+    SELECT @Id;
+
+    COMMIT TRANSACTION;
+END
+GO
+
+-- =============================================
+CREATE PROCEDURE ObtenerOrdenes
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        o.[id],
+        o.[user_id],
+        o.[status],
+        o.[total_amount],
+        o.[shipping_address_id],
+        o.[tracking_number],
+        o.[created_at],
+        o.[updated_at]
+    FROM [dbo].[orders] o;
+END
+GO
+
+-- =============================================
+CREATE PROCEDURE ObtenerOrden
+    @Id AS uniqueidentifier
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        o.[id],
+        o.[user_id],
+        o.[status],
+        o.[total_amount],
+        o.[shipping_address_id],
+        o.[tracking_number],
+        o.[created_at],
+        o.[updated_at]
+    FROM [dbo].[orders] o
+    WHERE o.[id] = @Id;
+END
+GO

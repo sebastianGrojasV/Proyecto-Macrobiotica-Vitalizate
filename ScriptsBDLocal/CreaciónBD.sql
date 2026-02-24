@@ -32,6 +32,26 @@ BEGIN
 END
 GO
 
+ALTER TABLE [auth].[users]
+ADD 
+    name NVARCHAR(200) NOT NULL,
+    email NVARCHAR(200) NOT NULL,
+    phone NVARCHAR(50) NULL,
+    rol NVARCHAR(50) NOT NULL,
+    cedula NVARCHAR(20) NOT NULL,
+    created_at DATETIMEOFFSET(7) NOT NULL 
+        CONSTRAINT users_created_at_default DEFAULT (SYSUTCDATETIME());
+
+ALTER TABLE [auth].[users]
+ADD CONSTRAINT UQ_users_email UNIQUE (email);
+
+ALTER TABLE [auth].[users]
+ADD CONSTRAINT UQ_users_cedula UNIQUE (cedula);
+
+ALTER TABLE [auth].[users]
+ADD CONSTRAINT CK_users_role
+CHECK (rol IN ('admin', 'delivery', 'customer', 'accountant'));
+
 /* ============================================================
    4) Tablas dbo (IDs como GUID)
    - text            -> NVARCHAR(MAX)
@@ -198,7 +218,7 @@ BEGIN
 
         CONSTRAINT [orders_status_ck]
             CHECK ([status] IN (N'pending', N'paid', N'shipped', N'delivered', N'cancelled'))
-            -- Ajustá esta lista para que refleje tu enum real
+            
     );
 END
 GO
