@@ -50,7 +50,12 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
+      <Toaster
+        position="bottom-right"
+        expand={true}        // permite que el stack crezca hacia abajo y no se “monten”
+        richColors
+        offset={16}          // separa del borde, ayuda a que no se sienta pegado
+      />
       <BrowserRouter>
         <Routes>
           {/* Public Routes */}
