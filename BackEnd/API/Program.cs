@@ -22,7 +22,7 @@ builder.Services.AddCors(options => {
     });
 });
 
-// Inyección de dependencias
+// InyecciÃ³n de dependencias
 builder.Services.AddScoped<ICategoriaFlujo, CategoriaFlujo>();
 builder.Services.AddScoped<IProductoFlujo, ProductoFlujo>();
 builder.Services.AddScoped<IHistorialProductoFlujo, HistorialProductoFlujo>();
@@ -35,6 +35,19 @@ builder.Services.AddScoped<IOrdenDA, OrdenDA>();
 
 builder.Services.AddScoped<IRepositorioDapper, RepositorioDapper>();
 
+builder.Services.AddScoped<IProveedorDA, ProveedorDA>();
+builder.Services.AddScoped<IProveedorFlujo, ProveedorFlujo>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173") // puerto de React
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
 
 var app = builder.Build();
 
@@ -49,6 +62,8 @@ if (app.Environment.IsDevelopment())
 app.UseCors("React");
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 
