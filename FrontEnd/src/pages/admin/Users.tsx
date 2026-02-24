@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Plus,
     Search,
@@ -45,16 +45,21 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import AdminLayout from '@/layouts/AdminLayout';
 import { User } from '@/lib/types';
-import { users as initialUsers } from '@/data/users';
+import { getUsers, createUser, deleteUserApi, updateUser } from '@/lib/usersApi';
 
 export default function Users() {
-    const [users, setUsers] = useState<User[]>(initialUsers);
+    const [users, setUsers] = useState<User[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
     /* eslint-disable @typescript-eslint/no-explicit-any */
-    const [newUser, setNewUser] = useState<Partial<User> & { password?: string }>({
-        role: 'customer',
-    });
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [newUser, setNewUser] = useState<Partial<User> & { password?: string }>(
+        {
+            role: 'customer',
+        }
+    );
 
     const filteredUsers = users.filter(
         (user) =>
@@ -101,26 +106,79 @@ export default function Users() {
         }
 
         // Escenario 1: Creación exitosa de usuario
-        const user: User = {
-            id: Math.random().toString(36).substr(2, 9),
-            name: newUser.name!,
-            email: newUser.email!,
-            phone: newUser.phone || '',
-            role: newUser.role as User['role'],
-            cedula: newUser.cedula!,
-            avatar: `https://i.pravatar.cc/150?u=${Math.random()}`,
-        };
-
-        setUsers([...users, user]);
-        setIsDialogOpen(false);
-        setNewUser({ role: 'customer' });
-        toast.success('Usuario creado exitosamente');
+        // Crear o actualizar en backend
+        setSaving(true);
+        if (editingUser) {
+            const payload: Partial<User> & { password?: string } = {
+                name: newUser.name,
+                email: newUser.email,
+                phone: newUser.phone || '',
+                role: newUser.role as User['role'],
+                cedula: newUser.cedula,
+                password: newUser.password,
+                avatar: editingUser.avatar || `https://i.pravatar.cc/150?u=${Math.random()}`,
+            };
+            updateUser(editingUser.id, payload)
+                .then((updated) => {
+                    setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+                    setIsDialogOpen(false);
+                    setEditingUser(null);
+                    setNewUser({ role: 'customer' });
+                    toast.success('Usuario actualizado exitosamente');
+                })
+                .catch((err) => {
+                    console.error(err);
+                    toast.error('Error al actualizar usuario');
+                })
+                .finally(() => setSaving(false));
+        } else {
+            createUser({
+                name: newUser.name!,
+                email: newUser.email!,
+                phone: newUser.phone || '',
+                role: newUser.role as User['role'],
+                cedula: newUser.cedula!,
+                password: newUser.password,
+                avatar: `https://i.pravatar.cc/150?u=${Math.random()}`,
+            })
+                .then((created) => {
+                    setUsers((prev) => [...prev, created]);
+                    setIsDialogOpen(false);
+                    setNewUser({ role: 'customer' });
+                    toast.success('Usuario creado exitosamente');
+                })
+                .catch((err) => {
+                    console.error(err);
+                    toast.error('Error al crear usuario');
+                })
+                .finally(() => setSaving(false));
+        }
     };
 
     const handleDeleteUser = (id: string) => {
-        setUsers(users.filter((u) => u.id !== id));
-        toast.success('Usuario eliminado');
+        // Borrar en backend
+        deleteUserApi(id)
+            .then(() => {
+                setUsers((prev) => prev.filter((u) => u.id !== id));
+                toast.success('Usuario eliminado');
+            })
+            .catch((err) => {
+                console.error(err);
+                toast.error('Error al eliminar usuario');
+            });
     };
+
+    // Cargar usuarios desde backend
+    useEffect(() => {
+        setLoading(true);
+        getUsers()
+            .then((data) => setUsers(data || []))
+            .catch((err) => {
+                console.error(err);
+                toast.error('Error cargando usuarios');
+            })
+            .finally(() => setLoading(false));
+    }, []);
 
     const getRoleBadgeColor = (role: string) => {
         switch (role) {
@@ -149,16 +207,31 @@ export default function Users() {
                             Administra los usuarios y sus permisos
                         </p>
                     </div>
-                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <Dialog
+                        open={isDialogOpen}
+                        onOpenChange={(open) => {
+                            setIsDialogOpen(open);
+                            if (!open) {
+                                setEditingUser(null);
+                                setNewUser({ role: 'customer' });
+                            }
+                        }}
+                    >
                         <DialogTrigger asChild>
-                            <Button className="bg-primary hover:bg-forest text-white gap-2">
-                                <Plus className="w-4 h-4" />
-                                Agregar Usuario
-                            </Button>
-                        </DialogTrigger>
+                                <Button
+                                    className="bg-primary hover:bg-forest text-white gap-2"
+                                    onClick={() => {
+                                        setEditingUser(null);
+                                        setNewUser({ role: 'customer' });
+                                    }}
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Agregar Usuario
+                                </Button>
+                            </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Agregar Nuevo Usuario</DialogTitle>
+                                <DialogTitle>{editingUser ? 'Editar Usuario' : 'Agregar Nuevo Usuario'}</DialogTitle>
                                 <DialogDescription>
                                     Ingrese los datos del nuevo usuario. La cédula es obligatoria para validación.
                                 </DialogDescription>
@@ -247,11 +320,17 @@ export default function Users() {
                             <DialogFooter>
                                 <Button
                                     variant="outline"
-                                    onClick={() => setIsDialogOpen(false)}
+                                    onClick={() => {
+                                        setIsDialogOpen(false);
+                                        setEditingUser(null);
+                                        setNewUser({ role: 'customer' });
+                                    }}
                                 >
                                     Cancelar
                                 </Button>
-                                <Button onClick={handleSaveUser}>Crear Usuario</Button>
+                                <Button onClick={handleSaveUser} disabled={saving}>
+                                    {saving ? (editingUser ? 'Guardando...' : 'Creando...') : (editingUser ? 'Guardar' : 'Crear Usuario')}
+                                </Button>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
@@ -334,7 +413,21 @@ export default function Users() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem className="gap-2">
+                                                <DropdownMenuItem
+                                                    className="gap-2"
+                                                    onClick={() => {
+                                                        setEditingUser(user);
+                                                        setNewUser({
+                                                            name: user.name,
+                                                            email: user.email,
+                                                            phone: user.phone,
+                                                            role: user.role,
+                                                            cedula: user.cedula,
+                                                            avatar: user.avatar,
+                                                        });
+                                                        setIsDialogOpen(true);
+                                                    }}
+                                                >
                                                     <Pencil className="w-4 h-4" />
                                                     Editar
                                                 </DropdownMenuItem>
