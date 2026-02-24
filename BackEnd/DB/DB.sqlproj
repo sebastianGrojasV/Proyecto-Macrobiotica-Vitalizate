@@ -88,5 +88,10 @@
     <Build Include="dbo\Stored Procedures\AgregarProducto.sql" />
     <Build Include="dbo\Tables\product_audit.sql" />
     <Build Include="dbo\Stored Procedures\ObtenerHistorialProducto.sql" />
+    <Build Include="dbo\Stored Procedures\ObtenerOrdenes.sql" />
+    <Build Include="dbo\Stored Procedures\ObtenerOrden.sql" />
+    <Build Include="dbo\Stored Procedures\EditarOrden.sql" />
+    <Build Include="dbo\Stored Procedures\CancelarOrden.sql" />
+    <Build Include="dbo\Stored Procedures\AgregarOrden.sql" />
   </ItemGroup>
 </Project>

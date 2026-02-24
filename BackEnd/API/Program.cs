@@ -26,10 +26,12 @@ builder.Services.AddCors(options => {
 builder.Services.AddScoped<ICategoriaFlujo, CategoriaFlujo>();
 builder.Services.AddScoped<IProductoFlujo, ProductoFlujo>();
 builder.Services.AddScoped<IHistorialProductoFlujo, HistorialProductoFlujo>();
+builder.Services.AddScoped<IOrdenFlujo, OrdenFlujo>();
 
 builder.Services.AddScoped<ICategoriaDA, CategoriaDA>();
 builder.Services.AddScoped<IProductoDA, ProductoDA>();
 builder.Services.AddScoped<IHistorialProductoDA, HistorialProductoDA>();
+builder.Services.AddScoped<IOrdenDA, OrdenDA>();
 
 builder.Services.AddScoped<IRepositorioDapper, RepositorioDapper>();
 
